@@ -1,0 +1,125 @@
+
+
+
+
+VERSION : 1.5.5 ======================================================
+
+
+-----------------
+2013-02-07 : Bugfix : Tidak bisa Input Pembelian - barang dengan karakter ' (tanda kutip atas)
+
+>>> Yang dilakukan :
+
+Klik Menu Pembelian
+
+Lalu, mulai input barang baru, dengan karakter ' (tanda kutip atas)
+Misal : "Al-Qur'an Emas Diponegoro"
+
+>>> Yang terjadi :
+
+Barang tidak muncul / tidak ter input
+
+>>> Yang diharapkan terjadi :
+
+Data barang tsb muncul / terinput.
+
+
+-----------------
+2013-02-07 : Bugfix : Tidak bisa Hapus Barang
+https://github.com/sufehmi/AhadPOS/issues/3
+
+>>> Yang dilakukan :
+
+Klik Menu Barang
+
+Lalu, di kolom AKSI, klik link "Hapus" di salah satu barang.
+
+>>> Yang terjadi :
+
+Muncul tulisan "Tidak Ada Aksi untuk modul ini"
+
+>>> Yang diharapkan terjadi :
+
+Data barang tsb dihapus.
+
+SOLUSI : 
+
+Proses menghapus data barang adalah :
+
+# Membuat table arsip_barang
+# Data barang yang dihapus kemudian dipindahkan ke table ini
+
+Maka, walaupun sudah dihapus, tetap ada arsip dari barang ybs.
+
+Struktur table arsip_barang :
+
+CREATE TABLE IF NOT EXISTS `arsip_barang` (
+  `idBarang` bigint(20) NOT NULL DEFAULT '0',
+  `namaBarang` varchar(30) DEFAULT ' ',
+  `idKategoriBarang` int(5) DEFAULT '0',
+  `idSatuanBarang` int(5) DEFAULT '0',
+  `jumBarang` int(10) DEFAULT '0',
+  `hargaJual` bigint(20) DEFAULT '0',
+  `last_update` date DEFAULT '2000-01-01',
+  `idSupplier` bigint(20) DEFAULT '0',
+  `barcode` varchar(25) DEFAULT NULL,
+  `username` varchar(30) DEFAULT NULL,
+  `idRak` bigint(5) DEFAULT NULL,
+  UNIQUE KEY `barcode` (`barcode`),
+  KEY `idKategoriBarang` (`idKategoriBarang`),
+  KEY `namaBarang` (`namaBarang`),
+  KEY `idSupplier` (`idSupplier`),
+  KEY `idKategoriBarang_2` (`idKategoriBarang`),
+  KEY `idSupplier_2` (`idSupplier`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+
+-----------------
+2013-01-30 : Modul Barang menampilkan teks SQL yang dieksekusi
+https://github.com/sufehmi/AhadPOS/issues/2
+
+>>> Yang dilakukan :
+
+Klik Menu Barang - Cetak Stock Barang
+Isi apa saja di form tsb, dan lalu klik tombol "Cetak Stock Barang"
+
+>>> Yang muncul :
+
+Muncul tulisan "SELECT bla bla bla"
+
+>>> Yang diharapkan terjadi :
+
+Seharusnya tidak muncul pesan debug ini.
+
+
+Bug fixed : https://github.com/sufehmi/AhadPOS/tree/17566beca9c45a445ba84169820530ff580f66ae/sistem/modul/mod_barang.php
+
+Keterangan : ada kode yang digunakan saat debugging yang menampilkan teks SQL. Seharusnya sudah dihapus sebelum code tsb di upload ke repository.
+
+Solusi : kode tsb sudah dihapus & mod_barang.php sudah di upload ulang ke repository.
+
+
+-----------------
+2013-01-26 : Barang - Cetak Stock Barang : hasilnya kosong
+https://github.com/sufehmi/AhadPOS/issues/1
+
+>>> Yang dilakukan :
+
+Klik Menu Barang - Cetak Stock Barang
+Isi apa saja di form tsb, dan lalu klik tombol "Cetak Stock Barang"
+
+>>> Yang muncul :
+
+Layar kosong
+
+>>> Yang diharapkan terjadi :
+
+Muncul daftar stock barang, sehingga kemudian bisa dicetak.
+
+Bug fixed : https://github.com/sufehmi/AhadPOS/tree/ef71dfe85fb6c868f8eb58e37d6c2d62f4f7d1c6/sistem/modul/mod_barang.php
+
+Keterangan : Ketika modul mod_barang.php diakses secara langsung / direct, tidak melalui media.php, maka variable $_SESSION jadi lenyap. Karena, variable ini di inisialisasi di media.php (dengan function session_start()
+
+Solusi : Sudah ditambahkan code untuk mendeteksi ini (mod_barang.php diakses secara langsung) -- maka kemudian akan menginisialisasi $_SESSION terlebih dahulu.
+
+

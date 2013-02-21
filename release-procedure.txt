@@ -1,0 +1,44 @@
+/*
+
+HOWTO create AhadPOS release package
+
+====================================
+
+
+# update init-db-ahadpos.sql
+
+# update update-db-ahadpos.sql
+
+# update database upgrade script : sistem/upgrade_check.php
+
+# update version.php
+
+
+# create package
+
+tar cvf ahadpos-x.x.x.tar ahadpos/*
+bzip2 ahadpos-x.x.x.tar
+mv ahadpos-x.x.x.tar.bz2  ~/Dropbox/Public/ahadpos-releases/
+
+
+# Daftar suku @ Indonesia : http://wiki.unnes.ac.id/articles/d/a/f/Daftar_suku_bangsa_di_Indonesia_fd4e.html
+
+# create changelog 
+Template : http://ahadpos.com/2012/08/17/changelog-1-2-5/
+
+# create upgrade guide 
+Template : http://ahadpos.com/2012/08/17/panduan-upgrade-ke-1-2-5/
+
+# create release announcement
+Template : http://ahadpos.com/2012/08/17/ahadpos-1-2-5/
+
+# update links @ download page : http://ahadpos.com/downloads/
+
+
+# announce @ ahadpos@egroups.com
+
+# update https://www.facebook.com/AhadPOS
+
+
+
+*/
