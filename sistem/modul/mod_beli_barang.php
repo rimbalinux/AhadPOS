@@ -144,7 +144,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
 		<tr>
                     <td>
 			<form method=POST action='?module=pembelian_barang&act=inputeprocurement1'>
-			<input type=submit value='Input Beli @ Gudang'>
+			<input type=submit value='Input Beli Otomatis'>
 			</form>
                     </td>
                     <td>
@@ -302,7 +302,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
                 <select name=supplierId>";
             $supplier = getSupplier();
             while($dataSupplier = mysql_fetch_array($supplier)){
-                echo "<option value=$dataSupplier[idSupplier]>$dataSupplier[idSupplier]::$dataSupplier[alamatSupplier]</option>";
+                echo "<option value=$dataSupplier[idSupplier]>$dataSupplier[namaSupplier]::$dataSupplier[alamatSupplier]</option>";
             }
         echo "</select>
 		<br />
@@ -344,7 +344,9 @@ switch($_GET[act]){ // ---------------------------------------------------------
             <input type=radio name=pilih onClick='for (i=0;i<$no;i++){document.getElementById(\"id\"+i).checked=true;}'>Check All
             <input type=radio name=pilih onClick='for (i=0;i<$no;i++){document.getElementById(\"id\"+i).checked=false;}'>Uncheck All
             </td></tr>
-            <tr><td colspan=5 align=right class=td><input type=submit value=Cetak></form></td></tr>";
+            <tr>
+		<td colspan=3 class=td> 		<input type=checkbox name=cetakcsv> Cetak Excel / CSV</td>
+		<td colspan=2 align=right class=td>	<input type=submit value=Cetak></form></td></tr>";
             echo "</table>";
             
         }
@@ -1157,13 +1159,14 @@ switch($_GET[act]){ // ---------------------------------------------------------
 
 
     case "inputeprocurement1"; // =======================================================================================================================
-        echo "<h2>Input Pembelian dari Gudang Ahad</h2>
+        echo "<h2>Input Transaksi Pembelian Elektronik</h2>
             <form method=POST action='?module=pembelian_barang&act=inputeprocurement2'  enctype='multipart/form-data'> 
                 Pilih File Transaksi : 
 		<input type=file  name=csvfile /> <br />
 		Tipe File :
-		<select name=tipefile>
+		<select name=jenistransaksi>
 			<option value='gudangahad' selected>Gudang.AhadMart.com</option>
+			<option value='transferahad' selected>Transfer antar Ahad mart</option>
 		</select> <br /><br />
 
 		<input type=submit value=Posting /> 
@@ -1182,7 +1185,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
 	$tgl = date("Y-m-d");
 	$totalInvoice = 0;
 
-        echo "<h2>Input Pembelian dari Gudang Ahad</h2>
+        echo "<h2>Input Transaksi Pembelian Elektronik</h2>
 
 		<form method=POST action='?module=pembelian_barang&act=inputeprocurement3'>
 
@@ -1273,6 +1276,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
 		</table>
 		
 		<input type=hidden name=count value=$n>
+		<input type=hidden name=jenistransaksi value=".$_POST['jenistransaksi'].">
 
 		<input type=submit value=SIMPAN /> 
 		</form>
@@ -1290,11 +1294,22 @@ switch($_GET[act]){ // ---------------------------------------------------------
 	$ctr = 1;
 
 	// cek apakah ada Supplier "Gudang.AhadMart.com" di table 
-	$hasil = mysql_query("SELECT idSupplier FROM supplier WHERE namaSupplier='Gudang.AhadMart.com'");
+	if ($_POST['jenistransaksi'] == 'transferahad') {
+		$hasil = mysql_query("SELECT idSupplier FROM supplier WHERE namaSupplier='Transfer.AhadMart.com'");
+	} elseif ($_POST['jenistransaksi'] == 'gudangahad') {
+		$hasil = mysql_query("SELECT idSupplier FROM supplier WHERE namaSupplier='Gudang.AhadMart.com'");
+	};
 	// jika tidak - bikin 1 recordnya
 	if (mysql_num_rows($hasil) < 1 ) {
-		mysql_query("INSERT INTO supplier (namaSupplier, alamatSupplier, telpSupplier, Keterangan, last_update) 
+		if ($_POST['jenistransaksi'] == 'transferahad') {
+			$sql = mysql_query("INSERT INTO supplier (namaSupplier, alamatSupplier, telpSupplier, Keterangan, last_update) 
+				VALUES ('Transfer.AhadMart.com', 'Jakarta', '021-7359407', 'http://transfer.ahadmart.com', '".date('Y-m-d')."')");
+		} elseif ($_POST['jenistransaksi'] == 'gudangahad') {
+			$sql = mysql_query("INSERT INTO supplier (namaSupplier, alamatSupplier, telpSupplier, Keterangan, last_update) 
 				VALUES ('Gudang.AhadMart.com', 'Jakarta', '021-7330923', 'http://gudang.ahadmart.com', '".date('Y-m-d')."')");
+		};
+
+		mysql_query($sql);
 		$hasil 	= mysql_query("SELECT LAST_INSERT_ID() FROM supplier");
 	};
 	$x		= mysql_fetch_array($hasil);
@@ -1541,12 +1556,16 @@ switch($_GET[act]){ // ---------------------------------------------------------
 
 /* CHANGELOG -----------------------------------------------------------
 
- 1.0.4 /20110724 : Harry Sufehmi	: Input Beli @ Gudang: 
+ 1.6.0 / 20130224 : Harry Sufehmi	: Form Pemesanan Barang : 
+					## bugfix: dropdown list Supplier kini menampilkan nama supplier (tadinya ID supplier)
+					## fitur : bisa output menjadi file Excel (csv)
+
+ 1.0.4 / 20110724 : Harry Sufehmi	: Input Beli @ Gudang: 
 					## bugfix: tidak semua pembelian tercatat di detail_beli
 					## revisi: jika barcode sudah ada di barang, maka cetak namaBarang di database & di Invoice,
 					agar user bisa membandingkan, dan mengkoreksi jika diperlukan.
 					(contoh: barcode sama, tapi nama barang nya berbeda)
- 1.0.3 /20110720 : Harry Sufehmi	: fitur Pembelian - Input Beli @ Gudang
+ 1.0.3 / 20110720 : Harry Sufehmi	: fitur Pembelian - Input Beli @ Gudang
  1.0.2	: Harry Sufehmi		: kini tidak bisa keliru input barcode di kolom quantity barang
  1.0.1	: Harry Sufehmi		: perhitungan PPN dibetulkan : kurangi diskon dulu - baru kemudian hitung PPN
 		# saat input nota, daftar barang kini diurut berdasarkan urutan input (FIFO)

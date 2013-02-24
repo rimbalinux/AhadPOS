@@ -125,6 +125,11 @@ switch($_GET['act']){
           <input type=submit accesskey='r' value='(r) Input Retur'></form>
 	</div>
 
+	<div style=\"float:left\">
+          <form method=POST action='?module=barang&act=transfer1'>
+          || <input type=submit value='Transfer Barang antar Ahad' ></form>
+	</div>
+
 
           <br/>
           <table class=tableku>
@@ -1267,6 +1272,34 @@ switch($_GET['act']){
 
 	break;
 
+  case "transfer1":  // ----------------------------------------------------------------------------
+
+	// ambil daftar customer
+	$sql="SELECT idCustomer, namaCustomer   
+		FROM customer ORDER BY namaCustomer ASC";
+	$namaCustomer=mysql_query($sql);
+
+        echo "<h2>Penjualan Barang</h2>
+              <form method=POST action='modul/js_jual_barang.php?act=caricustomer' onSubmit=\"popupform(this, 'jual_barang')\">
+              (i) ID Customer : <select name='idCustomer' accesskey='i'>";
+
+	while($cust = mysql_fetch_array($namaCustomer)){
+		if ($cust[idCustomer]==1) {
+			echo "<option value='$cust[idCustomer]' selected>$cust[namaCustomer] :: $cust[idCustomer]</option>\n";
+		} else {
+			echo "<option value='$cust[idCustomer]'>$cust[namaCustomer] :: $cust[idCustomer]</option>\n";
+		};
+	}	
+
+	echo "
+              </select><p>
+		<input type=hidden name=transferahad value=1>
+
+		<input type=submit value='(p) Pilih Customer' name='cariCustomer' accesskey='p'/>
+              </form>";
+
+
+	break;
 
 
 }
@@ -1274,6 +1307,7 @@ switch($_GET['act']){
 
 /* CHANGELOG -----------------------------------------------------------
 
+ 1.6.0 / 2013-02-24 : Harry Sufehmi	: fitur : transfer barang antar sesama pengguna AhadPOS
  1.5.5 / 2013-01-25 : Harry Sufehmi 	: bugfix: https://github.com/sufehmi/AhadPOS/issues/1 , 
 						terimakasih http://www.facebook.com/civo.pras untuk laporannya.
 

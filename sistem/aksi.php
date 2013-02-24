@@ -548,7 +548,7 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
 	while ($x = mysql_fetch_array($hasil)) {	
 		//$temp = $x[jumBarang] . "x ". $x[namaBarang]. " @".number_format($x[hargaJual],0,',','.').
 		//		": ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
-		$temp = $x[namaBarang]. "\n@ ".number_format($x[hargaJual],0,',','.'). " x ". $x[jumBarang]. 
+		$temp = $x[namaBarang]. "\n        @ ".number_format($x[hargaJual],0,',','.'). " x ". $x[jumBarang]. 
 				" = ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
 		// jika panjang baris > 40 huruf, pecah jadi 2 baris		
 		//if (strlen($temp) > 40) {
@@ -670,8 +670,78 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
         mysql_query($sql) or die(mysql_error());
 	}
 
-    mysql_query("DELETE FROM tmp_detail_jual WHERE idCustomer = '$_SESSION[idCustomer]' AND username = '$_SESSION[uname]'");
-    
+	// jika transfer antar Ahad,
+	// generate file CSV nya
+	if (!($_POST['transferahad'] == 1)) {
+	
+		// format isi file CSV :
+		// $data[0]  = barcode
+		// $data[1]  = idBarang - ignored
+		// $data[2]  = namaBarang
+		// $data[3]  = jumlah Barang / jumBarang
+		// $data[4]  = hargaBeli - ignored
+		// $data[5]  = hargaJual (di Gudang) 
+		// $data[6]  = RRP (Recommended Retail Price)
+		// $data[7]  = namaSatuanBarang
+		// $data[8]  = namaKategoriBarang
+		// $data[9]  = Supplier - ignored
+		// $data[10] = username - ignored
+
+		// persiapan membuat output file CSV
+		$csv = "\"barcode\",\"idBarang\",\"namaBarang\",\"jumBarang\",\"hargaBeli\",\"hargaJual\",\"RRP\",\"SatuanBarang\",\"KategoriBarang\",\"Supplier\",\"kasir\"\n";
+
+		// cari nama gudang ini 
+		$hasil 	= mysql_query("SELECT value FROM config WHERE option='store_name'");
+		$x	= mysql_fetch_array($hasil);
+		$namaGudang = ""; $namaGudang = $x[value];
+
+		$hasil1 = mysql_query("SELECT * FROM tmp_detail_jual WHERE idCustomer = '$_SESSION[idCustomer]' AND username = '$_SESSION[uname]'");
+		while ($x = mysql_fetch_array($hasil1)) {
+		
+			// cari namaBarang
+			$hasil2	= mysql_query("SELECT namaBarang, idKategoriBarang, idSatuanBarang FROM barang WHERE barcode='".$x[barcode]."'");
+			$y	= mysql_fetch_array($hasil2);
+			$namaBarang 		= $y[namaBarang];
+			$idKategoriBarang	= $y[idKategoriBarang];
+			$idSatuanBarang		= $y[idSatuanBarang];
+
+			// cari namaSatuanBarang
+			$hasil2	= mysql_query("SELECT namaSatuanBarang FROM satuan_barang WHERE idSatuanBarang=".$idSatuanBarang);
+			$y	= mysql_fetch_array($hasil2);
+			$namaSatuanBarang 		= $y[namaSatuanBarang];
+
+			// cari namaKategoriBarang
+			$hasil2	= mysql_query("SELECT namaKategoriBarang FROM kategori_barang WHERE idKategoriBarang=".$idKategoriBarang);
+			$y	= mysql_fetch_array($hasil2);
+			$namaKategoriBarang 		= $y[namaKategoriBarang];
+
+			$csv .= "\"".$x[barcode]."\",\"".$x[idBarang]."\",\"".$namaBarang."\",\"".$x[jumBarang]."\",\"".$x[hargaBeli]."\",\"".$x[hargaJual]."\",\"".$x[RRP]."\",\"".$namaSatuanBarang."\",\"".$namaKategoriBarang."\",\"".$namaGudang."\",\"".$_SESSION[uname]."\"\n";
+		}; // while ($x = mysql_fetch_array($hasil)) {
+
+		//header('location:media.php?module='.$module);
+		//echo "<script>window.close();</script>";
+
+		// kirim output CSV ke browser untuk di download
+		// cari nama Customer
+		$hasil2	= mysql_query("SELECT namaCustomer FROM customer WHERE idCustomer='".$_SESSION[idCustomer]."'");
+		$y	= mysql_fetch_array($hasil2);
+		$namaCustomer 	= $y[namaCustomer];
+		$namaFile	= $namaCustomer."-".date("Y-m-d--H-i");
+
+		// hapus transaksi jual ini dari table tmp_detail_jual
+		mysql_query("DELETE FROM tmp_detail_jual WHERE idCustomer = '$_SESSION[idCustomer]' AND username = '$_SESSION[uname]'");
+
+		header("Content-type: text/csv");
+		header("Content-Disposition: attachment; filename=\"$namaFile.csv\"");
+		header("Pragma: no-cache");
+		header("Expires: 0");
+		echo $csv;
+
+	} else {
+		// hapus transaksi jual ini dari table tmp_detail_jual
+		mysql_query("DELETE FROM tmp_detail_jual WHERE idCustomer = '$_SESSION[idCustomer]' AND username = '$_SESSION[uname]'");
+    	};
+
     $_SESSION[tot_pembelian] = 0;	
     releaseCustomer();
     //header('location:media.php?module='.$module);
@@ -953,6 +1023,7 @@ else{ // =======================================================================
 
 /* CHANGELOG -----------------------------------------------------------
 
+ 1.6.0 / 2013-02-24 : Harry Sufehmi	: fitur : transfer barang antar sesama pengguna AhadPOS
  1.6.0 / 2013-02-21 : Harry Sufehmi	: revisi: cetak struk : kini nama barang & harga dipisah menjadi 2 baris
  1.6.0 / 2013-02-07 : Harry Sufehmi	: bugfix: hapus barang kini sudah bisa
  1.2.5 / 2012-04-17 : Harry Sufehmi 	: bugfix: hapus satuan barang tidak berfungsi

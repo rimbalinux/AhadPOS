@@ -281,8 +281,11 @@ function cetakStruk ($perintahPrinter, $nomorStruk, $namaKasir, $totalTransaksi,
 			$totalRetur = $totalRetur + ($x[hargaBeli] * $x[jumBarang]);
  
 		} else {
-			$struk .= $x[jumBarang] . "x ". $x[namaBarang]. " @".number_format($x[hargaJual],0,',','.').
-					": ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
+			//$struk .= $x[jumBarang] . "x ". $x[namaBarang]. " @".number_format($x[hargaJual],0,',','.').
+			//		": ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
+			$struk .= $x[namaBarang]. "\n        ".
+					$x[jumBarang] . " x ". number_format($x[hargaJual],0,',','.').
+					" = ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
 		};
 
 	}

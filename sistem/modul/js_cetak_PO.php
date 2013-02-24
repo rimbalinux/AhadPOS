@@ -26,28 +26,56 @@ if (empty($_SESSION[namauser]) AND empty($_SESSION[passuser])){
 }
 else{
 
-  echo "<link href='../../config/adminstyle.css' rel='stylesheet' type='text/css'>";
+	if ($_POST['cetakcsv']) {
 
-        echo "<h2>Purchase Order</h2>";
-        $supplier = getDetailSupplier($_POST[idSupplier]);
-        $detailSupplier = mysql_fetch_array($supplier);
-        echo "Nama Supplier : $detailSupplier[namaSupplier]
-            <br/>Tanggal PO : ".date("d-m-Y")."<br/><br/>";
-        $cek = $_POST[cek];
-        $jumlah = count($cek);
-        $no = 1;
-        echo "<table width=500><tr><th>No</th><th>Barcode</th><th>Nama Barang</th><th>Stok<br />Saat Ini</th><th>Pesan</th></tr>";
-        for($i=0;$i<$jumlah;$i++){
-            $data = getBarangPesan($cek[$i]);
-            $barangPesan = mysql_fetch_array($data);
-            echo "<tr><td class=td>$no</td>
-                <td class=td>$barangPesan[barcode]</td>
-                <td class=td>$barangPesan[namaBarang]</td>
-                <td class=td><center>$barangPesan[jumBarang]</center></td>
-		<td class=td>_____</td></tr>";
-            $no++;
-        }
-        echo "</table>";
+		// persiapan membuat output file CSV
+		$csv = "\"Nomor\",\"Barcode\",\"Nama Barang\",\"Stok Saat Ini\",\"Pesan\"\n";
+
+        	$cek = $_POST['cek'];
+        	$jumlah = count($cek);
+        	$no = 1;
+        	for($i=0;$i<$jumlah;$i++){
+        	    $data = getBarangPesan($cek[$i]);
+        	    $barangPesan = mysql_fetch_array($data);
+		    $csv .= "\"".$no."\",\"".$barangPesan['barcode']."\",\"".$barangPesan['namaBarang']."\",\"".$barangPesan['jumBarang']."\",\"\"\n";
+        	    $no++;
+        	};
+
+        	$supplier 	= getDetailSupplier($_POST['idSupplier']);
+	        $detailSupplier = mysql_fetch_array($supplier);
+		$namaFile	= $detailSupplier['namaSupplier']."-".date("Y-m-d--H-i").".csv";
+
+		// kirim output CSV ke browser untuk di download
+		header("Content-type: text/csv");
+		header("Content-Disposition: attachment; filename=\"$namaFile\"");
+		header("Pragma: no-cache");
+		header("Expires: 0");
+		echo $csv;
+		
+	} else {
+		echo "<link href='../../config/adminstyle.css' rel='stylesheet' type='text/css'>";
+
+	        echo "<h2>Purchase Order</h2>";
+        	$supplier = getDetailSupplier($_POST[idSupplier]);
+	        $detailSupplier = mysql_fetch_array($supplier);
+        	echo "Nama Supplier : $detailSupplier[namaSupplier]
+        	    <br/>Tanggal PO : ".date("d-m-Y")."<br/><br/>";
+        	$cek = $_POST['cek'];
+        	$jumlah = count($cek);
+        	$no = 1;
+        	echo "<table width=500><tr><th>No</th><th>Barcode</th><th>Nama Barang</th><th>Stok<br />Saat Ini</th><th>Pesan</th></tr>";
+        	for($i=0;$i<$jumlah;$i++){
+        	    $data = getBarangPesan($cek[$i]);
+        	    $barangPesan = mysql_fetch_array($data);
+        	    echo "<tr><td class=td>$no</td>
+        	        <td class=td>$barangPesan[barcode]</td>
+        	        <td class=td>$barangPesan[namaBarang]</td>
+        	        <td class=td><center>$barangPesan[jumBarang]</center></td>
+			<td class=td>_____</td></tr>";
+        	    $no++;
+        	}
+        	echo "</table>";
+	}
 };
 
 

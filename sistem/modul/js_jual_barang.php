@@ -122,16 +122,25 @@ switch($_GET[act]){ // =========================================================
 
     case "caricustomer": // ========================================================================================================
         
-        echo "<h2>Penjualan Barang</h2>
+	if ($_POST['transferahad'] == 1) {
+	        echo "<h2>Transfer antar Ahad</h2>";
+	} else {
+	        echo "<h2>Penjualan Barang</h2>";
+	};
 
-		<div style='float:right' id='tot_pembelian'><span style='font-size:48pt'>".number_format($_SESSION[tot_pembelian],0,',','.')."</span></div>
+	echo "
+		<div style='float:right' id='tot_pembelian'><span style='font-size:48pt'>".number_format($_SESSION[tot_pembelian],0,',','.')."</span></div>";
 
-		Penjualan Barang untuk customer : $_SESSION[namaCustomer]
-                
-		";
-
-        echo "<h3>Barang yang dijual</h3>
-
+	if ($_POST['transferahad'] == 1) {
+		echo "
+		Transfer Barang ke Ahad : ".$_SESSION['namaCustomer'];
+        	echo "<h3>Barang yang ditransfer</h3>";
+	} else {
+		echo "
+		Penjualan Barang untuk customer : ".$_SESSION['namaCustomer'];
+        	echo "<h3>Barang yang dijual</h3>";
+	};
+		echo "
                     <table>
                         <tr>
                             <td colspan=3>
@@ -149,6 +158,10 @@ switch($_GET[act]){ // =========================================================
 	//	echo "<option value='$brg[barcode]'>$brg[barcode] - $brg[namaBarang] - Rp ".number_format($brg[hargaJual],0,',','.')."</option>\n";
 	//}	
 
+	if ($_POST['transferahad'] == 1) {
+		echo "<input type=hidden name=transferahad value=1>";
+	};
+
 	echo "
                             <td>(q) Qty</td><td>: <input type=text name='jumBarang' value='1' size=5 accesskey='q'></td>
                             <td align=right><input type=submit name='btnTambah' value='(t) Tambah' accesskey='t'></td>
@@ -156,7 +169,13 @@ switch($_GET[act]){ // =========================================================
 
 			<td>
 			<FORM METHOD=POST ACTION=\"js_cari_barang.php?caller=js_jual_barang\" onSubmit=\"popupform(this, 'cari1')\">
-			<input type=text name='namabarang' accesskey='c'>
+			<input type=text name='namabarang' accesskey='c'>";
+		
+	if ($_POST['transferahad'] == 1) {
+		echo "<input type=hidden name=transferahad value=1>";
+	};
+
+	echo "
 			<input type=submit name='btnCari' id='btnCari' value='(c) Cari Barang'>
 			</form>
 			</td>
@@ -218,6 +237,27 @@ switch($_GET[act]){ // =========================================================
                     else{
                         $warna = "#FFFFFF";
                     }
+
+		// jika ini barang yang akan di transfer, 
+		// maka berikan hargaBeli (modal) sebagai hargaJual
+		if ($_POST['transferahad'] == 1) {
+			$sql = "SELECT hargaBeli FROM detail_beli 
+				WHERE isSold='N' AND barcode='$data[barcode]' ORDER BY idDetailBeli ASC";
+			$hasil = mysql_query($sql);
+			$x = mysql_fetch_array($hasil);
+
+			// jika tidak ada / semua stok barang ini sudah terjual = catatan stok ngaco
+			// maka ambil hargaBeli yang terakhir saja
+			if (mysql_num_rows($hasil) < 1) {
+				$sql = "SELECT hargaBeli FROM detail_beli 
+					WHERE barcode='$data[barcode]' ORDER BY idDetailBeli ASC";
+				$hasil = mysql_query($sql);
+				$x = mysql_fetch_array($hasil);
+			};
+			
+			$data['hargaJual'] = $x['hargaBeli'];
+		};
+
                     echo "<tr bgcolor=$warna>";
                     echo "<td>$data[barcode]</td><td>$data[namaBarang]</td>
                         <td align=right>$data[jumBarang]</td>
@@ -246,6 +286,10 @@ switch($_GET[act]){ // =========================================================
 		</script>
 
 		";
+
+		if ($_POST['transferahad'] == 1) {
+			echo "<input type=hidden name=transferahad value=1>";
+		};
 
 		$_SESSION[tot_pembelian] = $tot_pembelian;
 
@@ -291,8 +335,9 @@ switch($_GET[act]){ // =========================================================
 
 /* CHANGELOG -----------------------------------------------------------
 
- 1.0.1 / 2010-06-03 : Harry Sufehmi		: perhitungan Surcharge dibetulkan
- 0.9.2 / 2010-03-03 : Harry Sufehmi 		: initial release
+ 1.6.0 / 2013-02-24 : Harry Sufehmi	: fitur : transfer barang antar sesama pengguna AhadPOS
+ 1.0.1 / 2010-06-03 : Harry Sufehmi	: perhitungan Surcharge dibetulkan
+ 0.9.2 / 2010-03-03 : Harry Sufehmi 	: initial release
 ------------------------------------------------------------------------ */
 
 ?>
