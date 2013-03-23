@@ -13,8 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License v2 (links provided above) for more details.
 ----------------------------------------------------------------*/
 
-check_user_access(basename($_SERVER['SCRIPT_NAME']));
-session_start();
+#check_user_access(basename($_SERVER['SCRIPT_NAME']));
 
 	//HS javascript untuk menampilkan dialog input "tambah barang baru"
 ?>	<script type="text/javascript">
@@ -791,22 +790,20 @@ switch($_GET[act]){ // ---------------------------------------------------------
 
     case "carisupplier": // ====================================================================================================================
 
-		if (isset($_POST['idSupplier'])) {
-           		$x = findSupplier($_POST['idSupplier']);
+		if (isset($_POST[idSupplier])) {
+           		$x = findSupplier($_POST[idSupplier]);
 		} else {
-			$x = findSupplier($_GET['idSupplier']);   
+			$x = findSupplier($_GET[idSupplier]);   
        		};
-
-	//echo "POST : ".$_POST['idSupplier']." GET : ".$_GET['idSupplier']." SESSION"; var_dump($_SESSION);
        
         echo "<h2>Pembelian Barang</h2>Pembelian Barang dari supplier :
-                    ".$_SESSION['namaSupplier'];
-        echo "<form method=POST action='?module=pembelian_barang&act=carisupplier&action=cek&idSupplier=".$_SESSION['idSupplier']."'>
+                    $_SESSION[namaSupplier]";
+        echo "<form method=POST action='?module=pembelian_barang&act=carisupplier&action=cek&idSupplier=$_SESSION[idSupplier]'>
 		
 			<br /><br /> (1) Pilihan barcode : ";
 
                 $sql1 = mysql_query("SELECT DISTINCT barcode, namaBarang   
-                                FROM barang WHERE idSupplier=".$_SESSION['idSupplier']." ORDER BY namaBarang ASC");
+                                FROM barang WHERE idSupplier=$_SESSION[idSupplier] ORDER BY namaBarang ASC");
 
 	        echo "<select name=barcode accesskey='1'>";
                 while ($data=mysql_fetch_array($sql1)){
@@ -819,7 +816,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
                 </form>";
 
 
-	echo "  <form method=POST action='?module=pembelian_barang&act=carisupplier&action=cek&idSupplier=".$_SESSION['idSupplier']."'>
+	echo "  <form method=POST action='?module=pembelian_barang&act=carisupplier&action=cek&idSupplier=$_SESSION[idSupplier]'>
 	
 		<br /> (3) Pilihan barang : ";
 
@@ -838,7 +835,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
 
 
 	//HS tombol "Tambah Barang" akan memunculkan form dialog jQuery
-	echo "	<form method=POST action='?module=pembelian_barang&act=carisupplier&action=cek&idSupplier=".$_SESSION['idSupplier']."'>
+	echo "	<form method=POST action='?module=pembelian_barang&act=carisupplier&action=cek&idSupplier=$_SESSION[idSupplier]'>
 		<center><input type=\"button\" id=\"tambahbarang\" accesskey='b' value='(b) Tambah Barang Baru' /> </center>
 		<input type='hidden' name='xppn' value='$_POST[xppn]'>
 		</form> <br />";	
@@ -931,10 +928,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
                     </tr>
                     <tr>
 
-                        <td align=right colspan=4>
-				<input type=submit accesskey='t' value='(t) Tambah' name=btTambah tabindex=8 >
-				<input type='hidden' name='idSupplier' value='".$_SESSION['idSupplier']."'>
-			</td>
+                        <td align=right colspan=4><input type=submit accesskey='t' value='(t) Tambah' name=btTambah tabindex=8 ></td>
                     </tr>
                 </table>
             </form>
@@ -1020,10 +1014,8 @@ switch($_GET[act]){ // ---------------------------------------------------------
 				<td align=right><input type=text name=jumlahBarang value=$data[jumBarang] size=5></td>
                         	<td align=right>$data[hargaBeli]</td>
                         	<td align=right>$data[hargaJual]</td>
-
                                 <input type=hidden name=barcode value=$data[barcode]>
                                 <input type=hidden name=idBarang value=$data[idBarang]>
-
 				<td align=right>".number_format($total,0,',','.')."</td>
                                 <td width=120><input type=submit name=update value=Update></form> |
                                 <a href='./aksi.php?module=pembelian_barang&act=hapus_detil&id=$data[idBarang]'>Hapus</a></td>
@@ -1091,14 +1083,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
 
 			echo "
                         <tr><td colspan=2>&nbsp;</td></tr>
-                        <tr>
-				<td><a href='aksi.php?module=pembelian_barang&act=batal'>BATAL</a></td>
-
-				<td>
-					<input type='hidden' name='idSupplier' value='".$_SESSION['idSupplier']."'>
-					<input type=submit value='Simpan' tabindex=17>
-				</td>
-			</tr>
+                        <tr><td><a href='aksi.php?module=pembelian_barang&act=batal'>BATAL</a></td><td><input type=submit value='Simpan' tabindex=17></td></tr>
                         </table></form>
 			";
                 
@@ -1297,7 +1282,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
 		</form>
 	";
 
-	break;
+	exit;
 
 
 
@@ -1427,7 +1412,7 @@ switch($_GET[act]){ // ---------------------------------------------------------
 	echo "<br /><h2>Jumlah item di invoice ini: ".($ctr - 1)." <br />
 		Total Pembelian : Rp ".uang($totalInvoice)."</h2><br />Selesai.";
 
-	break;                   
+	exit;                   
 }
 
 

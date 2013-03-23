@@ -1,6 +1,6 @@
 <?php
 /* function.php ------------------------------------------------------
-   	version: 1.5.0
+   	version: 1.01
 
 	Part of AhadPOS : http://ahadpos.com
 	License: GPL v2
@@ -13,7 +13,6 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License v2 (links provided above) for more details.
 ----------------------------------------------------------------*/
 
-session_start();
 
 function uang($duit) {
     if(!$duit) {
@@ -26,7 +25,7 @@ function uang($duit) {
 
 function getKasAwal($idUser){
     $tgl = date("Y-m-d");
-    $queryKas = mysql_query("SELECT kasAwal FROM kasir WHERE idUser = '$idUser' and tglBukaKasir LIKE '$tgl%'");
+    $queryKas = mysql_query("SELECT kasAwal FROM transaksikas where idUser = '$idUser' and tglTransaksiKas = '$tgl'");
     $dataKas = mysql_fetch_array($queryKas);
     $kas = $dataKas[kasAwal];
 
@@ -34,7 +33,7 @@ function getKasAwal($idUser){
 }
 function getUangKasir($idUser){
     $tgl = date("Y-m-d");
-    $query = mysql_query("SELECT sum(nominal) AS uang FROM transaksijual WHERE tglTransaksiJual LIKE '$tgl%' and idUser = '$idUser'");
+    $query = mysql_query("SELECT sum(nominal) as uang FROM transaksijual where tglTransaksiJual = '$tgl' and idUser = '$idUser'");
     $dataUang = mysql_fetch_array($query);
     $uang = $dataUang[uang];
     if ($uang == null){
@@ -46,37 +45,33 @@ function getUangKasir($idUser){
 }
 
 function findSupplier($idSupplier){
-    $sql = "SELECT * from supplier WHERE idSupplier = '$idSupplier'";
-    $query = mysql_query($sql);
+    $query = mysql_query("SELECT * from supplier WHERE idSupplier = '$idSupplier'");
     $dataSupplier = mysql_fetch_array($query);
-	//var_dump($dataSupplier);
 
-    #session_register("idSupplier");
-    #session_register("namaSupplier");
-	if ($dataSupplier) {
-		$_SESSION['idSupplier'] = $dataSupplier['idSupplier'];
-    		$_SESSION['namaSupplier'] = $dataSupplier['namaSupplier'];
-	};
+    session_register("idSupplier");
+    session_register("namaSupplier");
+    $_SESSION[idSupplier] = $dataSupplier[idSupplier];
+    $_SESSION[namaSupplier] = $dataSupplier[namaSupplier];
 }
 
 function releaseSupplier(){
-    #session_unregister("idSupplier");
-    #session_unregister("namaSupplier");
+    session_unregister("idSupplier");
+    session_unregister("namaSupplier");
 }
 
 function findCustomer($idCustomer){
     $query = mysql_query("SELECT * from customer WHERE idCustomer = '$idCustomer'");
     $dataCustomer = mysql_fetch_array($query);
 
-    #session_register("idCustomer");
-    #session_register("namaCustomer");
+    session_register("idCustomer");
+    session_register("namaCustomer");
     $_SESSION[idCustomer] = $dataCustomer[idCustomer];
     $_SESSION[namaCustomer] = $dataCustomer[namaCustomer];
 }
 
 function releaseCustomer(){
-    #session_unregister("idCustomer");
-    #session_unregister("namaCustomer");
+    session_unregister("idCustomer");
+    session_unregister("namaCustomer");
     $_SESSION[tot_pembelian] = 0;
 }
 
@@ -134,10 +129,7 @@ function tambahBarang($idSupplier,$barcode,$jumBarang,$hargaBeli,$hargaJual,$tgl
 
 function tambahBarangJualAda($idCustomer,$barcode,$jumBarang){
     $jumlah = 0;
-
-//  if($jumBarang==0){
-//  quantity can not be 0 (zero) or less than that
-    if($jumBarang < 1){
+    if($jumBarang==0){
         $jumlah = 1;
     }
     else{
@@ -160,9 +152,7 @@ function tambahBarangJual($barcode,$jumBarang){
     $dataAda = cekBarang($barcode);
     if ($dataAda != 0){
         $jumlah = 0;
-//      if($jumBarang==0){
-	// quantity can not be 0 (zero) or less than that
-        if($jumBarang<1){
+        if($jumBarang==0){
             $jumlah = 1;
         }
         else{
@@ -172,22 +162,17 @@ function tambahBarangJual($barcode,$jumBarang){
         $jualBarang = mysql_query("SELECT * FROM barang WHERE barcode = '$barcode'") or die(mysql_error());
         $jual = mysql_fetch_array($jualBarang);
 
-// bugfix :
-//	"ORDER BY idDetailBeli" diganti menjadi "ORDER BY idTransaksiBeli"
-//	karena, banyak database di berbagai toko Ahad mart yang isi idDetailBeli nya ngaco 
-//	(banyak field idDetailBeli yang isinya 0 [nol])
-
 	// cari hargaBeli & idBarang nya
 	$sql = "SELECT * FROM detail_beli 
 		WHERE isSold = 'N' AND barcode = '$barcode' AND jumBarang > 0 
-		ORDER BY idTransaksiBeli ASC LIMIT 1";
+		ORDER BY idDetailBeli ASC LIMIT 1";
 	//echo $sql;
 	$hasil = mysql_query($sql);
 	if (mysql_num_rows($hasil) < 1) { 	// jika tidak ada / stok sudah habis semua, coba cari lagi dengan menyertakan stok barang = 0
 						// tampilkan stok yang terakhir dibeli (ORDER BY idDetailBeli DESC)
 		$sql = "SELECT * FROM detail_beli 
-			WHERE barcode = '$barcode'  
-			ORDER BY idTransaksiBeli DESC LIMIT 1";
+			WHERE isSold = 'N' AND barcode = '$barcode'  
+			ORDER BY idDetailBeli DESC LIMIT 1";
 		$hasil = mysql_query($sql);
 	}
 
@@ -285,11 +270,8 @@ function cetakStruk ($perintahPrinter, $nomorStruk, $namaKasir, $totalTransaksi,
 			$totalRetur = $totalRetur + ($x[hargaBeli] * $x[jumBarang]);
  
 		} else {
-			//$struk .= $x[jumBarang] . "x ". $x[namaBarang]. " @".number_format($x[hargaJual],0,',','.').
-			//		": ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
-			$struk .= $x[namaBarang]. "\n        ".
-					$x[jumBarang] . " x ". number_format($x[hargaJual],0,',','.').
-					" = ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
+			$struk .= $x[jumBarang] . "x ". $x[namaBarang]. " @".number_format($x[hargaJual],0,',','.').
+					": ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
 		};
 
 	}
@@ -408,14 +390,8 @@ function ubahTempEditDetailPembelian($idDetailBeli,$tglExpire,$jumBarang,$hargaB
     mysql_query("UPDATE tmp_edit_detail_beli SET tglExpire = '$tglExpire', jumBarang = '$jumBarang', hargaBeli = '$hargaBeli' WHERE idDetailBeli = '$idDetailBeli'") or die(mysql_error());
 }
 
-function getJumBarangDiBarang($idDetailBeli, $barcode=''){
-	
-if ($barcode == '') {
-	$sql	= "SELECT barang.jumBarang FROM barang, tmp_edit_detail_retur_beli AS t WHERE t.idBarang = barang.idBarang AND t.idDetailBeli = '$idDetailBeli'";
-} else {
-	$sql	= "SELECT barang.jumBarang FROM barang, tmp_edit_detail_retur_beli AS t WHERE t.barcode = barang.barcode AND t.barcode = '$barcode'";
-};
-    $query = mysql_query($sql) or die(mysql_error());
+function getJumBarangDiBarang($idDetailBeli){
+    $query = mysql_query("SELECT barang.jumBarang FROM barang, tmp_edit_detail_retur_beli AS t WHERE t.idBarang = barang.idBarang AND t.idDetailBeli = '$idDetailBeli'") or die(mysql_error());
     $jum = mysql_fetch_array($query);
 
     return $jum[jumBarang];
@@ -441,33 +417,14 @@ function getDetailPenjualan($idNota){
     return $query;
 }
 
-function getDaftarBarangSupplier($idSupplier, $jumlahMin){
-
-//    $query = mysql_query("select idBarang, barcode, namaBarang, jumBarang from barang where idSupplier = '$idSupplier' AND jumBarang < $jumlahMin ORDER BY namaBarang") or die(mysql_error());
-
-        $sql = "SELECT b.idBarang, b.barcode, b.namaBarang, b.jumBarang, d.hargaBeli 
-                FROM barang AS b, 
-                        (SELECT * FROM detail_beli 
-                        GROUP BY barcode ORDER BY idTransaksiBeli) AS d 
-                WHERE b.idSupplier = '$idSupplier' AND b.jumBarang < $jumlahMin AND b.barcode = d.barcode 
-                ORDER BY b.namaBarang ASC";
-        $query = mysql_query($sql) or die(mysql_error());
+function getDaftarBarangSupplier($idSupplier){
+    $query = mysql_query("select idBarang, barcode, left(namaBarang,22) as namaBarang, jumBarang from barang where idSupplier = '$idSupplier'") or die(mysql_error());
 
     return $query;
 }
 
-function getBarangPesan($barcode){
-	
-	//$sql = "SELECT idBarang, barcode, namaBarang, jumBarang FROM barang WHERE idBarang = '$idBarang'";
-	$sql	= "SELECT b.idBarang, b.barcode, b.namaBarang, b.jumBarang, d.hargaBeli  
-		FROM barang AS b,
-			(SELECT * FROM detail_beli 
-			WHERE barcode = '$barcode' 
-			GROUP BY barcode ORDER BY idTransaksiBeli) AS d
-		WHERE b.barcode = '$barcode' AND b.barcode = d.barcode 
-		ORDER BY b.namaBarang ASC;	";
-	
-	$query = mysql_query($sql) or die(mysql_error());
+function getBarangPesan($idBarang){
+    $query = mysql_query("select idBarang, barcode, left(namaBarang,22) as namaBarang, jumBarang from barang where idBarang = '$idBarang'") or die(mysql_error());
 
     return $query;
 }
@@ -549,75 +506,12 @@ function cekBarangTempRetur($barcode){
     return $adaJual;
 }
 
-function check_user_access ($module_name) {
-
-	$userid = (int) $_SESSION['iduser'];
-	//var_dump($_SESSION);
-	ahp_user_can_access_module( $module_name, $userid );
-}
-
-
-// credit : Insan Faja
-function ahp_user_can_access_module( $module_name, $userid ) {
-    $userlevel = ahp_get_user_credentials( $userid );
-    $query = "SELECT `idLevelUser` FROM `modul` WHERE `script_name` = '$module_name' LIMIT 1;";
-	//echo "nih : ".$query;
-	//echo "mod : ".$module_name;
-    $data = mysql_query( $query );
-    if ($module_name == "media.php") { return; };
-    if( mysql_num_rows( $data ) < 1 )
-        die('No such user');
-    $dung = mysql_fetch_array( $data );
-    $module_ulevel = $dung['idLevelUser'];
-    if( $module_ulevel == 1 )
-         return;
-    if( $userlevel > $module_ulevel )
-        die('Access forbidden, please <a href="../index.php"><b>LOGIN</b></a>');
-}
-
-// credit : Insan Fajar
-function ahp_get_user_credentials( $userid ) {
-    $query = "SELECT `idLevelUser` FROM `user` WHERE `idUser` = '$userid' LIMIT 1;";
-    $data = mysql_query( $query );
-    if( mysql_num_rows( $data ) < 1 )
-        die('Access forbidden, please <a href="../index.php"><b>LOGIN</b></a>');
-	return 0;
-    $utmp = mysql_fetch_array( $data );
-    $userlevel = $utmp['idLevelUser'];
-    return $userlevel;
-}
-
 
 
 /* CHANGELOG -----------------------------------------------------------
 
- 1.6.0 / 2013-03-06 : Harry Sufehmi		: bugfix: fungsi findSupplier() tidak lagi menghapus variabel $_SESSION[idSupplier]
- 1.5.0 / 2013-01-01 : Harry Sufehmi		: bugfix: fungsi tambahBarangJual() kini tidak lagi mau menerima jumBarang < 1
-						(jika quantity penjualan bisa nol / minus, maka uang kas jadi bisa dirampok kasir)
-
- 1.5.0 / 2013-01-01 : Harry Sufehmi		: bugfix: fungsi tambahBarangJual() kadang mendapatkan harga beli yang salah.
-					"ORDER BY idDetailBeli" diganti menjadi "ORDER BY idTransaksiBeli"
-					karena, banyak database di berbagai toko Ahad mart yang isi idDetailBeli nya ngaco 
-					(banyak field idDetailBeli yang isinya 0 [nol])
-
- 1.5.0 / 2012-11-25 : Harry Sufehmi		: fungsi-fungsi untuk mengamankan modul-modul (dari akses langsung / bypass login).
-							Credit : Insan Fajar
-
- 1.2.5 / 2012-03-05 : Harry Sufehmi		: fungsi tambahBarangJual() kini akan selalu mendapatkan hargaBeli dengan benar.
-						(bugfix: hargaBeli tersimpan sebagai 0 di tmp_detail_jual & detail_jual jika 
-							suatu item jumBarang = 0 dan isSold = 'Y' / tidak ada yang isSold = 'N')
-
- 1.2.5 / 2012-02-14 : Harry Sufehmi		: fungsi getJumBarangDiBarang() kini bisa retrieve jumBarang dari parameter barcode yang diberikan
-						(bugfix: jumBarang di table barang tidak berkurang setelah Retur Pembelian)
-
- 1.2.5 / 2012-02-01 : Harry Sufehmi		: fungsi getDaftarBarangSupplier() tidak lagi memotong output barang.namaBarang
-
- 1.2.5 / 2012-01-30 : Harry Sufehmi		: fungsi getDaftarBarangSupplier() : menampilkan hanya yang barang.jumBarang < $jumlahMin
-
  1.0.1 / 2010-11-22 : Harry Sufehmi		: fungsi-fungsi untuk Retur Barang
-
  1.0.1 / 2010-06-03 : Harry Sufehmi		: various enhancements, bugfixes
-
  0.9.1		    : Gregorius Arief		: initial release
 
 ------------------------------------------------------------------------ */

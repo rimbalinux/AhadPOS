@@ -1279,7 +1279,7 @@ switch($_GET['act']){
 		FROM customer ORDER BY namaCustomer ASC";
 	$namaCustomer=mysql_query($sql);
 
-        echo "<h2>Penjualan Barang</h2>
+        echo "<h2>Transfer Barang</h2>
               <form method=POST action='modul/js_jual_barang.php?act=caricustomer' onSubmit=\"popupform(this, 'jual_barang')\">
               (i) ID Customer : <select name='idCustomer' accesskey='i'>";
 
@@ -1293,7 +1293,7 @@ switch($_GET['act']){
 
 	echo "
               </select><p>
-		<input type=hidden name=transferahad value=1>
+		<input type=hidden name='transferahad' value='1'>
 
 		<input type=submit value='(p) Pilih Customer' name='cariCustomer' accesskey='p'/>
               </form>";

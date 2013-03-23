@@ -1,18 +1,15 @@
 <?php
-/* js_jual_barang.php ----------------------------------------
-   	version: 1.01
 
-	Part of AhadPOS : http://ahadpos.com
-	License: GPL v2
-			http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
-			http://vlsm.org/etc/gpl-unofficial.id.html
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License v2 (links provided above) for more details.
-----------------------------------------------------------------*/
-
+// --------------------------------
+// name		: js_jual_barang.php
+// license	: GPL v2
+// original author 	: harry sufehmi
+// contributors		: .............
+// --------------------------------
+// CHANGELOG
+//
+// 0.9.2 / 2010-03-03 : initial release
+// --------------------------------
 
 include "../../config/config.php";
 include "function.php";
@@ -46,55 +43,16 @@ else{
 		return true;
 	}
 
-	function number_format(a, b, c, d) {
-	// credit: http://www.krisnanda.web.id/2009/06/09/javascript-number-format/
-	
-		 a = Math.round(a * Math.pow(10, b)) / Math.pow(10, b);
-
-		 e = a + '';
-		 f = e.split('.');
-		 if (!f[0]) {  f[0] = '0';}
-		 if (!f[1]) {  f[1] = '';  }
-
-		 if (f[1].length < b) {
-			  g = f[1];
-			  for (i=f[1].length + 1; i <= b; i++) {
-				   g += '0';
-			  }
-			  f[1] = g;
-		 }
-
-		 if(d != '' && f[0].length > 3) {
-			  h = f[0];
-			  f[0] = '';
-			  for(j = 3; j < h.length; j+=3) {
-				   i = h.slice(h.length - j, h.length - j + 3);
-				   f[0] = d + i +  f[0] + '';
-			  }
-			  j = h.substr(0, (h.length % 3 == 0) ? 3 : (h.length % 3));
-			  f[0] = j + f[0];
-		 }
-
-		 c = (b <= 0) ? '' : c;
-		return f[0] + c + f[1];
-	}
-
-
-	function RecalcTotal(tot_pembelian) {
-		var totalBeli = 0;
+	function hitungKembali(tot_pembelian) {
 		var Kembali = 0;
 		var uangDibayar 	= parseInt(document.getElementById("uangDibayar").value);
 		var surcharge	 	= parseInt(document.getElementById("surcharge").value);
 
-		totalSurcharge		= ((tot_pembelian / 100) * surcharge);
-		totalBeli 		= tot_pembelian + totalSurcharge;
-		Kembali 		= uangDibayar - totalBeli;
+		tot_pembelian = tot_pembelian + ((tot_pembelian / 100) * surcharge)
+		Kembali = uangDibayar - tot_pembelian;
 
 		document.getElementById("uangKembali").value = Kembali;
-		document.getElementById("kembalian").innerHTML = '<span style="font-size:48pt">' + number_format(Kembali,0,',','.') + '</span>';
-
-		document.getElementById("TotalSurcharge").value = number_format(totalSurcharge,0,',','.');
-		document.getElementById("tot_pembelian").innerHTML = '<span style="font-size:48pt">' + number_format(totalBeli,0,',','.') + '</span>';
+		document.getElementById("kembalian").innerHTML = '<span style="font-size:48pt">' + Kembali + '</span>';
 	}
 
 	-->
@@ -122,33 +80,22 @@ switch($_GET[act]){ // =========================================================
 
     case "caricustomer": // ========================================================================================================
         
-	if (($_POST['transferahad'] == 1) || ($_GET['transferahad'] == 1)) {
-	        echo "<h2>Transfer antar Ahad</h2>";
-	} else {
-	        echo "<h2>Penjualan Barang</h2>";
-	};
+        echo "<h2>Penjualan Barang</h2>
 
-	echo "
-		<div style='float:right' id='tot_pembelian'><span style='font-size:48pt'>".number_format($_SESSION[tot_pembelian],0,',','.')."</span></div>";
+		<div style='float:right' id='tot_pembelian'><span style='font-size:48pt'>".number_format($_SESSION[tot_pembelian],0,',','.')."</span></div>
 
-	if (($_POST['transferahad'] == 1) || ($_GET['transferahad'] == 1)) {
-		echo "
-		Transfer Barang ke Ahad : ".$_SESSION['namaCustomer'];
-        	echo "<h3>Barang yang ditransfer</h3>";
-	} else {
-		echo "
-		Penjualan Barang untuk customer : ".$_SESSION['namaCustomer'];
-        	echo "<h3>Barang yang dijual</h3>";
-	};
-		echo "
+		Penjualan Barang untuk customer : $_SESSION[namaCustomer]
+                
+		";
+
+        echo "<h3>Barang yang dijual</h3>
+
                     <table>
                         <tr>
                             <td colspan=3>
 
 				<form method=POST action='js_jual_barang.php?act=caricustomer&action=tambah'>
 				(b) Barcode</td><td>: <input type=text name='barcode' accesskey='b' id='barcode'></td>
-			
-				<td>
 		";
 
 	// ----- TERLALU LAMBAT ! ----- jangan gunakan dropbox terlampir untuk memilih barcode
@@ -160,26 +107,14 @@ switch($_GET[act]){ // =========================================================
 	//	echo "<option value='$brg[barcode]'>$brg[barcode] - $brg[namaBarang] - Rp ".number_format($brg[hargaJual],0,',','.')."</option>\n";
 	//}	
 
-	//var_dump($_POST); 
-	//var_dump($_GET);	
-	if (($_POST['transferahad'] == 1) || ($_GET['transferahad'] == 1)) {
-		echo "<input type=hidden name='transferahad' value='1'>"; 
-	};
-
 	echo "
-                            (q) Qty</td><td>: <input type=text name='jumBarang' value='1' size=5 accesskey='q'></td>
+                            <td>(q) Qty</td><td>: <input type=text name='jumBarang' value='1' size=5 accesskey='q'></td>
                             <td align=right><input type=submit name='btnTambah' value='(t) Tambah' accesskey='t'></td>
 			    </form>
 
 			<td>
-			<FORM METHOD=POST ACTION=\"js_cari_barang.php?caller=js_jual_barang\" onSubmit=\"popupform(this, 'cari1')\">
-			<input type=text name='namabarang' accesskey='c'>";
-		
-	if (($_POST['transferahad'] == 1) || ($_GET['transferahad'] == 1)) {
-		echo "<input type=hidden name='transferahad' value='1'>";
-	};
-
-	echo "
+			<FORM METHOD=POST ACTION=\"js_cari_barang.php\" onSubmit=\"popupform(this, 'cari1')\">
+			<input type=text name='namabarang' accesskey='c'>
 			<input type=submit name='btnCari' id='btnCari' value='(c) Cari Barang'>
 			</form>
 			</td>
@@ -225,14 +160,14 @@ switch($_GET[act]){ // =========================================================
                         <th>Total</th>
 			<th>Aksi</th></tr>";
                 $no=1;
-                $tot_pembelian=0;
+                $tot_pembelian;
 
                 $query2 = mysql_query("SELECT tdj.uid, tdj.barcode, b.namaBarang, tdj.jumBarang, tdj.hargaJual, tdj.tglTransaksi
                                         FROM tmp_detail_jual tdj, barang b
                                         WHERE tdj.barcode = b.barcode AND tdj.idCustomer = '$_SESSION[idCustomer]' 
 						AND tdj.username = '$_SESSION[uname]' ORDER BY tglTransaksi DESC");
-		
                 while ($data=mysql_fetch_array($query2)){
+                    $total = $data[hargaJual] * $data[jumBarang];
                     //untuk mewarnai tabel menjadi selang-seling
                     if(($no % 2) == 0){
                         $warna = "#EAF0F7";
@@ -240,35 +175,10 @@ switch($_GET[act]){ // =========================================================
                     else{
                         $warna = "#FFFFFF";
                     }
-
-		// jika ini barang yang akan di transfer, 
-		// maka berikan hargaBeli (modal) sebagai hargaJual
-		if (($_POST['transferahad'] == 1) || ($_GET['transferahad'] == 1)) {
-			$sql = "SELECT hargaBeli FROM detail_beli 
-				WHERE isSold='N' AND barcode='$data[barcode]' ORDER BY idDetailBeli ASC";
-			$hasil = mysql_query($sql);
-			$x = mysql_fetch_array($hasil);
-
-			// jika tidak ada / semua stok barang ini sudah terjual = catatan stok ngaco
-			// maka ambil hargaBeli yang terakhir saja
-			if (mysql_num_rows($hasil) < 1) {
-				$sql = "SELECT hargaBeli FROM detail_beli 
-					WHERE barcode='$data[barcode]' ORDER BY idDetailBeli ASC";
-				$hasil = mysql_query($sql);
-				$x = mysql_fetch_array($hasil);
-			};
-			
-			$data['hargaJual'] = $x['hargaBeli'];
-		};
-
-
-		$total = $data[hargaJual] * $data[jumBarang];
-
                     echo "<tr bgcolor=$warna>";
                     echo "<td>$data[barcode]</td><td>$data[namaBarang]</td>
                         <td align=right>$data[jumBarang]</td>
-                        <td align=right>$data[hargaJual]</td>
-			<td align=right>".number_format($total,0,',','.')."</td>
+                        <td align=right>$data[hargaJual]</td><td align=right>".number_format($total,0,',','.')."</td>
 			<td align=right> <a href='js_jual_barang.php?act=caricustomer&doit=hapus&uid=$data[uid]'>Hapus</a></td>
                         </tr>";
                     $tot_pembelian += $total;
@@ -285,7 +195,7 @@ switch($_GET[act]){ // =========================================================
 			<div id='kembalian' style='float:right'></div>
 
 			<table class=tableku width=600>
-                        <tr><td width=65% align=right>Total Pembelian</td><td align=right><div id='TotalBeli'>".number_format($tot_pembelian,0,',','.')."</div></td></tr>
+                        <tr><td width=65% align=right>Total Pembelian</td><td align=right>".number_format($tot_pembelian,0,',','.')."</td></tr>
 
 		<script>
 			document.getElementById('tot_pembelian').innerHTML = '<span style=\"font-size:48pt\">".number_format($tot_pembelian,0,',','.')."</span>';
@@ -293,15 +203,11 @@ switch($_GET[act]){ // =========================================================
 
 		";
 
-	if (($_POST['transferahad'] == 1) || ($_GET['transferahad'] == 1)) {
-			echo "<input type=hidden name=transferahad value=1>";
-		};
-
-		$_SESSION['tot_pembelian'] = $tot_pembelian;
+		$_SESSION[tot_pembelian] = $tot_pembelian;
 
 		echo "
                         <tr><td width=65% align=right>(a) Tipe Pembayaran</td>
-                            <td align=right><select name='tipePembayaran' accesskey='a' tabindex=1>
+                            <td align=right><select name='tipePembayaran' accesskey='a'>
                                         <option value='0'>-Tipe Pembayaran-</option>";
 
 		while($pembayaran = mysql_fetch_array($pmbyrn)){
@@ -312,38 +218,29 @@ switch($_GET[act]){ // =========================================================
 			}
 		}
 
+			//fixme: tambahkan kolom surcharge, yg otomatis terisi dg value "3%" jika TipePembayaran = CreditCard
                         echo "</select></td></tr>
-                        <tr><td width=65% align=right>Surcharge</td><td align=right><input type=text name='surcharge' id='surcharge' value=0 size=2 tabindex=2> % (Rp <input type=text name='TotalSurcharge' id='TotalSurcharge' value=0 size=6  tabindex=100 readonly>)</td></tr>
-                        <tr><td width=65% align=right>Uang Dibayar</td><td align=right><input type=text name='uangDibayar' id='uangDibayar' value=0 onBlur='RecalcTotal($tot_pembelian)'  tabindex=3></td></tr>
+                        <tr><td width=65% align=right>Surcharge</td><td align=right><input type=text name='surcharge' id='surcharge' value=0> %</td></tr>
+                        <tr><td width=65% align=right>Uang Dibayar</td><td align=right><input type=text name='uangDibayar' id='uangDibayar' value=0 onBlur='hitungKembali($tot_pembelian)'></td></tr>
                         <tr><td width=65% align=right>Kembali</td><td align=right><input type=text name='uangKembali' id='uangKembali' value=0></td></tr>
                         <tr><td colspan=2>&nbsp;</td></tr>
 
 
-                        <tr><td> [<a href='../aksi.php?module=penjualan_barang&act=batal'> BATAL </a>]</td><td align=right>&nbsp;&nbsp;&nbsp;<input type=submit value='Simpan' onclick='this.disabled=true;'></td></tr>
+                        <tr><td> [<a href='../aksi.php?module=penjualan_barang&act=batal'> BATAL </a>]</td><td align=right>&nbsp;&nbsp;&nbsp;<input type=submit value='Simpan'></td></tr>
                         </table></form>";
+
+		//fixme: buat tombol "Simpan & Cetak PDF" - untuk pengguna di Windows
 
 
         }
         else{
             echo "Belum ada barang yang dibeli<br />
-            <a href='../aksi.php?module=penjualan_barang&act=batal'>BATAL</a>
-		";
+            <a href='../aksi.php?module=penjualan_barang&act=batal'>BATAL</a>";
         }
         
-	echo "		<div style='float:right'><img src='../../image/logo-ahadpos-1.gif'></div>";
-
         break;
 }
 
 } // if (empty($_SESSION[namauser])
-
-
-
-/* CHANGELOG -----------------------------------------------------------
-
- 1.6.0 / 2013-02-24 : Harry Sufehmi	: fitur : transfer barang antar sesama pengguna AhadPOS
- 1.0.1 / 2010-06-03 : Harry Sufehmi	: perhitungan Surcharge dibetulkan
- 0.9.2 / 2010-03-03 : Harry Sufehmi 	: initial release
------------------------------------------------------------------------- */
 
 ?>

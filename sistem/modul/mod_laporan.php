@@ -81,6 +81,17 @@ switch($_GET[act]){ //----------------------------------------------------------
 			</td>
 
 		</tr>
+
+		<tr>
+	
+			<td>
+			<form method=POST action='?module=laporan&act=po'>
+			<input type=submit value='(p) Purchase Order' accesskey='r'>
+			</form>
+			</td>
+		</tr>
+
+	
 		</table>
 
 	";
@@ -668,7 +679,7 @@ switch($_GET[act]){ //----------------------------------------------------------
 			<td class=td align=right> ".number_format($x['jumlah'],0,',','.')." </td>
 			<td class=td align=right> ".number_format($x['omset'],0,',','.')." </td>
 			<td class=td align=right> ".number_format($x['profit'],0,',','.')." </td>
-			<td class=td align=right> ".number_format(($x['jumlah'] / $jmlhari),0,',','.')." </td>
+			<td class=td align=right> ".number_format(($x['jumlah'] / $jmlhari),2,',','.')." </td>
 			<td class=td align=right> ".number_format($x['jumBarang'],0,',','.')." </td>
 			</tr>";
 	};
@@ -813,6 +824,67 @@ switch($_GET[act]){ //----------------------------------------------------------
 
 	exit;
 	}
+
+    case "po"; // =======================================================================================================================
+        echo "<h2>Purchase Order</h2>
+            <form method=POST action='?module=laporan&act=po&action=pesanbarang'>
+                Supplier : 
+                <select name=supplierId>";
+            $supplier = getSupplier();
+            while($dataSupplier = mysql_fetch_array($supplier)){
+                echo "<option value=$dataSupplier[idSupplier]>$dataSupplier[namaSupplier]::$dataSupplier[alamatSupplier]</option>";
+            }
+        echo "</select>
+		<br />
+		Tampilkan hanya barang dengan jumlah lebih kecil dari : <input type=text name=jumlahmin value=0 size=3>
+		<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <input type=submit value=Pilih>
+            </form>";
+
+        if($_GET[action] == 'pesanbarang'){
+            
+            $supplier = getDetailSupplier($_POST[supplierId]);
+            $detailSupplier = mysql_fetch_array($supplier);
+            echo "<h2>Pesan Barang di Supplier $detailSupplier[namaSupplier]</h2>
+            <br/>Alamat Supplier : $detailSupplier[alamatSupplier]<br/><br/>
+            <form method=POST action='modul/js_cetak_PO.php'   onSubmit=\"popupform(this, 'Purchase_Order')\">
+            <table width=500>
+                <tr><th>#</th><th>No</th><th>Barcode</th><th>Nama Barang</th><th>Stok<br />Saat Ini</th><th>Harga<br />Beli</th></tr>";
+            $no = 0;
+            $queryBarang = getDaftarBarangSupplier($_POST[supplierId], $_POST[jumlahmin]);
+            while($barangSupplier = mysql_fetch_array($queryBarang)){
+                if(($no % 2) == 0){
+                        $warna = "#EAF0F7";
+                    }
+                    else{
+                        $warna = "#FFFFFF";
+                    }
+                    echo "<tr bgcolor=$warna>";//end warna
+                    echo "<td class=td align=center><input type=checkbox name=cek[] value=$barangSupplier[barcode] id=id$no checked=true></td>";
+                    $no++;
+                    echo "<td class=td>$no</td>
+                        <td class=td>$barangSupplier[barcode]</td>
+                        <td class=td>$barangSupplier[namaBarang]</td>
+                        <td class=td align=right><center>$barangSupplier[jumBarang]</center></td>
+                        <td class=td align=right>$barangSupplier[hargaBeli]</td>
+                        </tr>";
+            }
+
+                    echo "<input type=hidden name=idSupplier value=$_POST[supplierId]>";
+            echo "<tr><td colspan=5 align=center class=td>
+            <input type=radio name=pilih onClick='for (i=0;i<$no;i++){document.getElementById(\"id\"+i).checked=true;}'>Check All
+            <input type=radio name=pilih onClick='for (i=0;i<$no;i++){document.getElementById(\"id\"+i).checked=false;}'>Uncheck All
+            </td></tr>
+            <tr>
+		<td colspan=3 class=td> 		<input type=checkbox name=cetakcsv> Cetak Excel / CSV</td>
+		<td colspan=2 align=right class=td>	<input type=submit value=Cetak></form></td></tr>";
+            echo "</table>";
+            
+        }
+        exit;
+
+
 
 
 }

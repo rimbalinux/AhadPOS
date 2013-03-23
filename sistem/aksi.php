@@ -431,7 +431,7 @@ elseif ($module=='pembelian_barang' AND $act=='input'){
 
 	$sql_trans = "INSERT INTO transaksibeli(tglTransaksiBeli,
                     idSupplier,nominal,idTipePembayaran,username,last_update,NomorInvoice)
-                    VALUES('$tgl','$_SESSION[idSupplier]',
+                    VALUES('$tgl','$_POST[idSupplier]',
                            '$_POST[tot_pembayaran]','$_POST[tipePembayaran]',
                             '$_SESSION[uname]','$tgl','$_POST[NomorInvoice]')";
 //	echo $sql_trans;
@@ -448,8 +448,10 @@ elseif ($module=='pembelian_barang' AND $act=='input'){
 
     }
 
-	$dataBarang = mysql_query("SELECT * from tmp_detail_beli
-            where idSupplier = '$_SESSION[idSupplier]' and username = '$_SESSION[uname]' and idBarang != 0") or die(mysql_error());
+	$sql = "SELECT * FROM tmp_detail_beli WHERE idSupplier = '".$_POST['idSupplier']."' 
+			AND username = '".$_SESSION['uname']."' AND idBarang != 0";
+	$dataBarang = mysql_query($sql) or die(mysql_error());
+	//echo $sql;
 
     while($simpan = mysql_fetch_array($dataBarang)){
 
@@ -457,11 +459,11 @@ elseif ($module=='pembelian_barang' AND $act=='input'){
                         tglExpire,jumBarang,jumBarangAsli,hargaBeli,username,idBarang)
                     VALUES('$idTransaksiBeli','$simpan[barcode]',
                     '$simpan[tglExpire]',$simpan[jumBarang],$simpan[jumBarang],'$simpan[hargaBeli]','$_SESSION[uname]','$simpan[idBarang]')";
-//	echo $sql_simpan;
+	//echo $sql_simpan;
 	mysql_query($sql_simpan) or die(mysql_error());
 
         $jumlahAkhir = 0;
-        $jumBarang = mysql_query("select jumBarang from barang where barcode = '$simpan[barcode]'") or die(mysql_error());
+        $jumBarang = mysql_query("SELECT jumBarang FROM barang WHERE barcode = '".$simpan['barcode']."'") or die(mysql_error());
         $jumlah = mysql_fetch_array($jumBarang);
         $jumlahAkhir = $jumlah[jumBarang] + $simpan[jumBarang];
 
@@ -477,8 +479,10 @@ elseif ($module=='pembelian_barang' AND $act=='input'){
 
 //Batal sebuah item di Nota Beli
 elseif ($module=='pembelian_barang' AND $act=='hapus_detil'){
-    mysql_query("DELETE FROM tmp_detail_beli where idSupplier = '$_SESSION[idSupplier]' and idBarang = '$_GET[id]'");
-    header('location:media.php?module=pembelian_barang&act=carisupplier');
+    mysql_query("DELETE FROM tmp_detail_beli where idSupplier = '".$_SESSION['idSupplier']."' and idBarang = '$_GET[id]'");
+    
+	//var_dump($_SESSION);
+	header('location:media.php?module=pembelian_barang&act=carisupplier');
 }
 
 
@@ -504,16 +508,17 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
 	// simpan transaksi ke database
 	$tgl = date("Y-m-d H:i:s");
 
-	$sql = "INSERT INTO transaksijual(tglTransaksiJual,
-                    idCustomer,idTipePembayaran,nominal,idUser,last_update,uangDibayar)
-                    VALUES('$tgl','$_SESSION[idCustomer]',
-                           '$_POST[tipePembayaran]','$_POST[tot_pembayaran]',
-                            '$_SESSION[iduser]','$tgl', $_POST[uangDibayar])";
-	$hasil 	= mysql_query($sql) or die(mysql_error());
-	//echo $sql;
-
-	$NomorStruk = mysql_insert_id();
-
+	$NomorStruk = 0;
+	if (($_POST['transferahad'] != 1)) {
+		$sql = "INSERT INTO transaksijual(tglTransaksiJual,
+	                    idCustomer,idTipePembayaran,nominal,idUser,last_update,uangDibayar)
+        	            VALUES('$tgl','$_SESSION[idCustomer]',
+        	                   '$_POST[tipePembayaran]','$_POST[tot_pembayaran]',
+        	                    '$_SESSION[iduser]','$tgl', $_POST[uangDibayar])";
+		$hasil 	= mysql_query($sql) or die(mysql_error());
+		//echo $sql;
+		$NomorStruk = mysql_insert_id();
+	};
 
 	// cetak struk -------------
 
@@ -662,17 +667,20 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
 	$hasil = mysql_query($sql);
 
 
-	$sql = "INSERT INTO detail_jual(idBarang, barcode, 
-                        jumBarang,hargaJual,username, nomorStruk, hargaBeli)
-                    VALUES('$simpan[idBarang]', '$simpan[barcode]', 
-                    '$simpan[jumBarang]','$simpan[hargaJual]','$_SESSION[uname]', $NomorStruk, $simpan[hargaBeli])";
-	//echo $sql;
-        mysql_query($sql) or die(mysql_error());
+        if (($_POST['transferahad'] != 1)) {
+		$sql = "INSERT INTO detail_jual(idBarang, barcode, 
+	                        jumBarang,hargaJual,username, nomorStruk, hargaBeli)
+	                    VALUES('$simpan[idBarang]', '$simpan[barcode]', 
+	                    '$simpan[jumBarang]','$simpan[hargaJual]','$_SESSION[uname]', $NomorStruk, $simpan[hargaBeli])";
+		//echo $sql;
+		mysql_query($sql) or die(mysql_error());
+	};
+
 	}
 
 	// jika transfer antar Ahad,
 	// generate file CSV nya
-	if (!($_POST['transferahad'] == 1)) {
+	if (($_POST['transferahad'] == 1)) {
 	
 		// format isi file CSV :
 		// $data[0]  = barcode
@@ -691,7 +699,7 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
 		$csv = "\"barcode\",\"idBarang\",\"namaBarang\",\"jumBarang\",\"hargaBeli\",\"hargaJual\",\"RRP\",\"SatuanBarang\",\"KategoriBarang\",\"Supplier\",\"kasir\"\n";
 
 		// cari nama gudang ini 
-		$hasil 	= mysql_query("SELECT value FROM config WHERE option='store_name'");
+		$hasil 	= mysql_query("SELECT value FROM config WHERE `option` = 'store_name'");
 		$x	= mysql_fetch_array($hasil);
 		$namaGudang = ""; $namaGudang = $x[value];
 
@@ -699,11 +707,11 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
 		while ($x = mysql_fetch_array($hasil1)) {
 		
 			// cari namaBarang
-			$hasil2	= mysql_query("SELECT namaBarang, idKategoriBarang, idSatuanBarang FROM barang WHERE barcode='".$x[barcode]."'");
+			$hasil2	= mysql_query("SELECT namaBarang, idKategoriBarang, idSatuanBarang FROM barang WHERE barcode='".$x['barcode']."'");
 			$y	= mysql_fetch_array($hasil2);
-			$namaBarang 		= $y[namaBarang];
-			$idKategoriBarang	= $y[idKategoriBarang];
-			$idSatuanBarang		= $y[idSatuanBarang];
+			$namaBarang 		= $y['namaBarang'];
+			$idKategoriBarang	= $y['idKategoriBarang'];
+			$idSatuanBarang		= $y['idSatuanBarang'];
 
 			// cari namaSatuanBarang
 			$hasil2	= mysql_query("SELECT namaSatuanBarang FROM satuan_barang WHERE idSatuanBarang=".$idSatuanBarang);
@@ -715,7 +723,7 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
 			$y	= mysql_fetch_array($hasil2);
 			$namaKategoriBarang 		= $y[namaKategoriBarang];
 
-			$csv .= "\"".$x[barcode]."\",\"".$x[idBarang]."\",\"".$namaBarang."\",\"".$x[jumBarang]."\",\"".$x[hargaBeli]."\",\"".$x[hargaJual]."\",\"".$x[RRP]."\",\"".$namaSatuanBarang."\",\"".$namaKategoriBarang."\",\"".$namaGudang."\",\"".$_SESSION[uname]."\"\n";
+			$csv .= "\"".$x['barcode']."\",\"".$x['idBarang']."\",\"".$namaBarang."\",\"".$x['jumBarang']."\",\"".$x['hargaBeli']."\",\"".$x['hargaBeli']."\",\"".$x['hargaJual']."\",\"".$namaSatuanBarang."\",\"".$namaKategoriBarang."\",\"".$namaGudang."\",\"".$_SESSION['uname']."\"\n";
 		}; // while ($x = mysql_fetch_array($hasil)) {
 
 		//header('location:media.php?module='.$module);
@@ -730,6 +738,8 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
 
 		// hapus transaksi jual ini dari table tmp_detail_jual
 		mysql_query("DELETE FROM tmp_detail_jual WHERE idCustomer = '$_SESSION[idCustomer]' AND username = '$_SESSION[uname]'");
+		$_SESSION[tot_pembelian] = 0;	
+		releaseCustomer();
 
 		header("Content-type: text/csv");
 		header("Content-Disposition: attachment; filename=\"$namaFile.csv\"");
@@ -737,15 +747,17 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
 		header("Expires: 0");
 		echo $csv;
 
+
 	} else {
 		// hapus transaksi jual ini dari table tmp_detail_jual
 		mysql_query("DELETE FROM tmp_detail_jual WHERE idCustomer = '$_SESSION[idCustomer]' AND username = '$_SESSION[uname]'");
+		$_SESSION[tot_pembelian] = 0;	
+		releaseCustomer();
+
+		//header('location:media.php?module='.$module);
+		echo "<script>window.close();</script>";
     	};
 
-    $_SESSION[tot_pembelian] = 0;	
-    releaseCustomer();
-    //header('location:media.php?module='.$module);
-	echo "<script>window.close();</script>";
 }
 
 //Batal Transaksi Jual

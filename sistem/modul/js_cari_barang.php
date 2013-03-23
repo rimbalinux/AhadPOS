@@ -62,11 +62,17 @@ return false;
                 </table>
 	";
 
-	//$sql = "SELECT * FROM barang WHERE namaBarang LIKE '%".$_POST[namabarang]."%' ORDER BY namaBarang ASC";
+	$sql = "SELECT * FROM barang WHERE namaBarang LIKE '%".$_POST[namabarang]."%' ORDER BY namaBarang ASC";
 	//$sql = "SELECT * FROM barang WHERE match(namaBarang) against ('+\"".$_POST[namabarang]."\"' in boolean mode) ORDER BY namaBarang ASC ";
-	$sql = "SELECT * FROM barang WHERE match(namaBarang) against ('".$_POST[namabarang]."' in boolean mode) ORDER BY namaBarang ASC ";
+	//$sql = "SELECT * FROM barang WHERE match(namaBarang) against ('".$_POST[namabarang]."' in boolean mode) ORDER BY namaBarang ASC ";
 	//echo $sql;
         $query = mysql_query($sql);
+
+	if ($_POST['transferahad'] == 1) {
+		$transferahad = '&transferahad=1';
+	} else {
+		$transferahad = '';
+	};
 
 	echo "<table>
 		<tr><th>Barcode</th><th>Nama Barang</th><th>Harga</th><th>Pilih</th></tr>
@@ -82,7 +88,7 @@ return false;
                     echo "<tr bgcolor=$warna>";
                     echo "<td>&nbsp; $data[barcode] &nbsp;</td><td>&nbsp; $data[namaBarang] &nbsp;</td>
                         <td align=right>&nbsp; ".number_format($data[hargaJual],0,',','.')." &nbsp;</td>
-			<td>&nbsp; [<a href='$caller.php?act=caricustomer&action=tambah&barcode=$data[barcode]' onClick=\"return targetopener(this,true)\"> Pilih </a>] 
+			<td>&nbsp; [<a href='$caller.php?act=caricustomer&action=tambah&barcode=$data[barcode]$transferahad' onClick=\"return targetopener(this,true)\"> Pilih </a>] 
 			</td>
                         </tr>";
                     $tot_pembelian += $total;

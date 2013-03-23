@@ -29,7 +29,7 @@ else{
 	if ($_POST['cetakcsv']) {
 
 		// persiapan membuat output file CSV
-		$csv = "\"Nomor\",\"Barcode\",\"Nama Barang\",\"Stok Saat Ini\",\"Harga Beli\",\"Pesan\"\n";
+		$csv = "\"Nomor\",\"Barcode\",\"Nama Barang\",\"Stok Saat Ini\",\"Pesan\"\n";
 
         	$cek = $_POST['cek'];
         	$jumlah = count($cek);
@@ -37,7 +37,7 @@ else{
         	for($i=0;$i<$jumlah;$i++){
         	    $data = getBarangPesan($cek[$i]);
         	    $barangPesan = mysql_fetch_array($data);
-		    $csv .= "\"".$no."\",\"".$barangPesan['barcode']."\",\"".$barangPesan['namaBarang']."\",\"".$barangPesan['jumBarang']."\",\"".$barangPesan['hargaBeli']."\",\"\"\n";
+		    $csv .= "\"".$no."\",\"".$barangPesan['barcode']."\",\"".$barangPesan['namaBarang']."\",\"".$barangPesan['jumBarang']."\",\"\"\n";
         	    $no++;
         	};
 
