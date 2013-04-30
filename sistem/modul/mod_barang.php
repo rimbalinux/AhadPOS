@@ -86,6 +86,11 @@ switch($_GET['act']){
 	</div>
 
 	<div style=\"float:left\">
+          <form method=POST action='?module=barang&act=cetakperbarcode'>
+          <input type=submit accesskey='l' value='(l) Cetak Label / barcode' ></form>
+	</div>
+
+	<div style=\"float:left\">
           <form method=POST action='?module=barang&act=cetakbarang1'>
           <input type=submit accesskey='b' value='(b) Cetak Stock Barang'></form>
 	</div>
@@ -523,6 +528,68 @@ switch($_GET['act']){
 
 
 
+	case "cetakperbarcode": // =============================================================================================
+	
+	$tampil = mysql_query("SELECT * FROM tmp_cetak_label_perbarcode");
+	$jumlah_pilihan = mysql_num_rows($tampil);
+	
+	echo "<div>
+			<form action='?module=barang&act=cetakperbarcode&cek=barcode' method='POST'>
+				<input type='text' name='lBarcode' size='25' placeholder='Input barcode' id=barcode />
+				<input type='submit' name='cekBarcode' value='Get Barang'/>
+			</form>
+
+		<script>
+			var txtBox=document.getElementById(\"barcode\");
+			if (txtBox!=null ) txtBox.focus();
+		</script>
+
+		  </div>";
+	
+	if($_GET[cek] == "barcode")
+	{
+		if($_POST[lBarcode] != "")
+		{
+			$cekBarcode = $_POST[lBarcode];
+			insertTempLabel($cekBarcode);
+			header('location:?module=barang&act=cetakperbarcode');
+		}
+	}
+	echo "<form action='modul/mod_cetakperbarcode.php?act=printperbarcode' method='POST' onSubmit=\"popupform(this, 'printperbarcode')\">
+		  <table class=tableku>
+          <tr><th>no</th><th>Barcode</th><th>Nama Barang</th><th>Kategori Barang</th>
+                <th>Satuan Barang</th><th>Harga Jual</th><th>Aksi</th></tr>";
+				
+	
+    $no=1;
+    while (($r=mysql_fetch_array($tampil))){
+        //untuk mewarnai tabel menjadi selang-seling
+        if(($no % 2) == 0){
+            $warna = "#EAF0F7";
+	}
+	else{
+            $warna = "#FFFFFF";
+	}
+	echo "<tr bgcolor=$warna>";//end warna
+       echo "<td align='center' class='td'>$no</td>
+             <td align='center' class='td'>$r[tmpBarcode]</td>
+             <td align='center' class='td'>$r[tmpNama]</td>
+             <td align='center' class='td'>$r[tmpKategori]</td>
+             <td align='center' class='td'>$r[tmpSatuan]</td>
+             <td align='right' class='td'>$r[tmpHargaJual]</td>
+             <td class='td'><a href='./aksi.php?module=labelperbarcode&act=hapus&id=$r[id]'>Batal</a>
+             </td></tr>
+             <input type='hidden' name='idTmpBarang' value='$r[id]' />
+             <input type='hidden' name='total' value='$jumlah_pilihan' />
+             ";
+      $no++;
+    }
+    echo "</table>
+    	  <div>
+    	  	<input type='submit' name='printBarcode' value='Print' />
+    	  </div></form>";
+  break;
+	
 
 
   case "inputrak": // ========================================================================================================================
@@ -1307,6 +1374,7 @@ switch($_GET['act']){
 
 /* CHANGELOG -----------------------------------------------------------
 
+ 1.6.0 / 2013-05-01 : Herwono		: fitur : cetak label harga perbarcode
  1.6.0 / 2013-02-24 : Harry Sufehmi	: fitur : transfer barang antar sesama pengguna AhadPOS
  1.5.5 / 2013-01-25 : Harry Sufehmi 	: bugfix: https://github.com/sufehmi/AhadPOS/issues/1 , 
 						terimakasih http://www.facebook.com/civo.pras untuk laporannya.

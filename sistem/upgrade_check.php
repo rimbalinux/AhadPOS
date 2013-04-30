@@ -257,6 +257,21 @@ function upgrade_150_to_160() {
         $hasil  = exec_query($sql);
 	echo mysql_error();
 
+	$sql	= "CREATE TABLE IF NOT EXISTS `tmp_cetak_label_perbarcode` (
+			`id` int(12) NOT NULL AUTO_INCREMENT,
+  			`tmpBarcode` varchar(50) DEFAULT NULL,
+			`tmpNama` varchar(100) DEFAULT NULL,
+			`tmpKategori` varchar(50) DEFAULT NULL,
+			`tmpSatuan` varchar(50) DEFAULT NULL,
+			`tmpJumlah` varchar(100) DEFAULT NULL,
+			`tmpHargaJual` varchar(100) DEFAULT NULL,
+			`tmpIdBarang` int(12) DEFAULT NULL,
+			PRIMARY KEY (`id`)
+		) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9;"
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+
         // update version number ------------------------------------------------------
         $sql    = "SELECT * FROM config WHERE `option` = 'version'";
         $hasil  = mysql_query($sql);

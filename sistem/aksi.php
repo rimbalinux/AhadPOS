@@ -1027,6 +1027,12 @@ elseif($module=='laporanpenjualan' AND $act=='hapuslaporan'){
 }               
 
 
+// Hapus tmp cetak perbarcode
+elseif ($module=='labelperbarcode' AND $act=='hapus'){
+  mysql_query("DELETE FROM tmp_cetak_label_perbarcode WHERE id = '$_GET[id]'");
+  header('location:media.php?module=barang&act=cetakperbarcode');
+} // end
+
 
 else{ // =======================================================================================================================================
     echo "Tidak Ada Aksi untuk modul ini";
@@ -1035,6 +1041,7 @@ else{ // =======================================================================
 
 /* CHANGELOG -----------------------------------------------------------
 
+ 1.6.0 / 2013-05-01 : Herwono		: fitur : cetak label harga perbarcode
  1.6.0 / 2013-02-24 : Harry Sufehmi	: fitur : transfer barang antar sesama pengguna AhadPOS
  1.6.0 / 2013-02-21 : Harry Sufehmi	: revisi: cetak struk : kini nama barang & harga dipisah menjadi 2 baris
  1.6.0 / 2013-02-07 : Harry Sufehmi	: bugfix: hapus barang kini sudah bisa

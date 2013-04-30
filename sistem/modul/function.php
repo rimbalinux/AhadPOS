@@ -557,7 +557,7 @@ function check_user_access ($module_name) {
 }
 
 
-// credit : Insan Faja
+// credit : Insan Fajar
 function ahp_user_can_access_module( $module_name, $userid ) {
     $userlevel = ahp_get_user_credentials( $userid );
     $query = "SELECT `idLevelUser` FROM `modul` WHERE `script_name` = '$module_name' LIMIT 1;";
@@ -588,9 +588,51 @@ function ahp_get_user_credentials( $userid ) {
 }
 
 
+// cetak label barang per-barcode
+function insertTempLabel($cekBarcode)
+{
+	if(!$cekBarcode)
+	{
+		$cekBarcode = "0";
+	}
+	$tampil = mysql_query("SELECT
+				`barang`.`idBarang`,
+				`barang`.`namaBarang`,
+				`barang`.`idKategoriBarang`,
+				`kategori_barang`.`namaKategoriBarang`,
+				`barang`.`idSatuanBarang`,
+				`satuan_barang`.`namaSatuanBarang`,
+				`barang`.`jumBarang`,
+				`barang`.`hargaJual`,
+				`barang`.`barcode`
+			FROM `barang`
+				LEFT JOIN `kategori_barang`
+					ON `barang`.`idKategoriBarang` = `kategori_barang`.`idKategoriBarang`
+				LEFT JOIN `satuan_barang`
+					ON `barang`.`idSatuanBarang` = `satuan_barang`.`idSatuanBarang` 
+			WHERE `barang`.`barcode` = '$cekBarcode' ");
+			
+
+    while ($r=mysql_fetch_array($tampil))
+    {
+		$tmpId = $r['idBarang'];
+		$tmpBarcode = $r['barcode'];
+		$tmpNama = $r['namaBarang'];
+		$tmpKategori = $r['namaKategoriBarang'];
+		$tmpSatuan = $r['namaSatuanBarang'];
+		$tmpJumlah = $r['jumBarang'];
+		$tmpHargaJual = $r['hargaJual'];
+		
+		$query = "INSERT INTO tmp_cetak_label_perbarcode (tmpBarcode, tmpNama, tmpKategori, tmpSatuan, tmpJumlah, tmpHargaJual, tmpIdBarang) VALUE ('$tmpBarcode','$tmpNama','$tmpKategori','$tmpSatuan','$tmpJumlah','$tmpHargaJual','$tmpId')";
+		$sql = mysql_query($query);
+	}
+}
+
+
 
 /* CHANGELOG -----------------------------------------------------------
 
+ 1.6.0 / 2013-05-01 : Herwono			: fitur : cetak label harga perbarcode
  1.6.0 / 2013-03-06 : Harry Sufehmi		: bugfix: fungsi findSupplier() tidak lagi menghapus variabel $_SESSION[idSupplier]
  1.5.0 / 2013-01-01 : Harry Sufehmi		: bugfix: fungsi tambahBarangJual() kini tidak lagi mau menerima jumBarang < 1
 						(jika quantity penjualan bisa nol / minus, maka uang kas jadi bisa dirampok kasir)
