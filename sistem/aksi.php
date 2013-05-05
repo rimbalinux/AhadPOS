@@ -358,12 +358,14 @@ elseif ($module=='supplier' AND $act=='input'){
 // Update Supplier
 elseif ($module=='supplier' AND $act=='update'){
     $tgl = date("Y-m-d");
-    mysql_query("UPDATE supplier SET namaSupplier = '$_POST[namaSupplier]',
-                    alamatSupplier = '$_POST[alamatSupplier]',
-                    telpSupplier = '$_POST[telpSupplier]',
-                    Keterangan = '$_POST[Keterangan]',
-                    last_update = '$tgl'
-                    WHERE idSupplier = '$_POST[idSupplier]'");
+    mysql_query("UPDATE supplier SET 
+			namaSupplier = '$_POST[namaSupplier]',
+			`interval` = $_POST[interval],
+			alamatSupplier = '$_POST[alamatSupplier]',
+			telpSupplier = '$_POST[telpSupplier]',
+			Keterangan = '$_POST[Keterangan]',
+			last_update = '$tgl'
+		WHERE idSupplier = '$_POST[idSupplier]'");
     header('location:media.php?module='.$module);
 }// end Update Supplier
 

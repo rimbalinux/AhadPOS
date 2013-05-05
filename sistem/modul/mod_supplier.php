@@ -75,6 +75,7 @@ switch($_GET[act]){
           <input type=hidden name='idSupplier' value='$data[idSupplier]'>
           <table>
           <tr><td>Nama Supplier</td><td> : <input type=text name='namaSupplier' size=40 value='$data[namaSupplier]'></td></tr>
+          <tr><td>Interval</td><td> : <input type=text name='interval' size=5 value='$data[interval]'> hari<br />(selang waktu / periode kunjungan)</td></tr>
           <tr><td>Alamat Supplier</td><td> : <textarea name='alamatSupplier' rows='2' cols='35'>$data[alamatSupplier]</textarea></td></tr>
           <tr><td>Telp Supplier</td><td> : <input type=text name='telpSupplier' size=15 value='$data[telpSupplier]'></td></tr>
           <tr><td>Keterangan</td><td> : <textarea name='Keterangan' rows='4' cols='35'>$data[Keterangan]</textarea></td></tr>

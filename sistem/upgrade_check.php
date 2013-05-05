@@ -267,7 +267,27 @@ function upgrade_150_to_160() {
 			`tmpHargaJual` varchar(100) DEFAULT NULL,
 			`tmpIdBarang` int(12) DEFAULT NULL,
 			PRIMARY KEY (`id`)
-		) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9;"
+		) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9;";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+	$sql	= "alter table modul add index(idLevelUser);";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+	$sql	= "alter table modul add index(publish);";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+	$sql	= "alter table leveluser add index (idLevelUser);";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+	$sql	= "alter table leveluser add index (levelUser);";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+	$sql	= "ALTER TABLE `supplier` ADD `interval` INT NOT NULL DEFAULT '7'";
         $hasil  = exec_query($sql);
 	echo mysql_error();
 

@@ -87,7 +87,7 @@ switch($_GET['act']){
 
 	<div style=\"float:left\">
           <form method=POST action='?module=barang&act=cetakperbarcode'>
-          <input type=submit accesskey='l' value='(l) Cetak Label / barcode' ></form>
+          <input type=submit value='Cetak Label / barcode' ></form>
 	</div>
 
 	<div style=\"float:left\">
