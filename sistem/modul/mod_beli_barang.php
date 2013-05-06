@@ -151,6 +151,15 @@ switch($_GET[act]){ // ---------------------------------------------------------
                     <td>
 		</tr>
 
+		<tr>
+                    <td>
+			<form method=POST action='?module=pembelian_barang&act=buatrpo1'>
+			<input type=submit value='(o) Buat RPO' accesskey='o'>
+			</form>
+                    </td>
+                    <td>
+		</tr>
+
 		</table>";
         break;
 
@@ -1428,7 +1437,67 @@ switch($_GET[act]){ // ---------------------------------------------------------
 		Total Pembelian : Rp ".uang($totalInvoice)."</h2><br />Selesai.";
 
 	break;                   
-}
+
+
+
+    case "buatrpo1": // ===============================================================================================================
+        echo "<h2>Buat RPO (Rencana Purchase Order) :: Step 1</h2>
+            <form method=POST action='?module=pembelian_barang&act=buatrpo2'>
+
+                Supplier : 
+                <select name=supplierid>";
+            $supplier = getSupplier();
+            while($dataSupplier = mysql_fetch_array($supplier)){
+                echo "<option value=$dataSupplier[idSupplier]>$dataSupplier[namaSupplier]::$dataSupplier[idSupplier]::$dataSupplier[alamatSupplier]</option>";
+            }
+        echo "  </select>
+
+
+            <input type=submit value='Pilih Supplier'>
+            </form>
+            ";
+
+	break;
+
+
+    case "buatrpo2": // ===============================================================================================================
+        echo "<h2>Buat RPO (Rencana Purchase Order) :: Step 2</h2>
+            <form method=POST action='modul/js_buat_rpo.php?act=mulairpo' onSubmit=\"popupform(this, 'Buat_RPO')\">
+
+		<input type=hidden name=supplierid value='".$_POST['supplierid']."'>";
+
+	// cari periode delivery supplier ybs
+	$sql 	= "SELECT `interval` FROM supplier WHERE idSupplier=".$_POST['supplierid'];
+	$hasil	= mysql_query($sql);
+	$x	= mysql_fetch_array($hasil);
+
+	echo "
+	<table>
+
+	<tr><td>Periode delivery Supplier </td>
+		<td> : <input type=text size=4 			name=periode value='".$x['interval']."'> hari</td>
+	</tr>
+
+	<tr><td>Range analisa penjualan </td>
+		<td> : <input type=text size=4 			name=range value='30'> hari</td>
+	</tr>
+
+	<tr><td>Jumlah pemesanan </td>
+		<td> : untuk persediaan <input type=text size=4 name=persediaan value='".$x['interval']."'> hari</td>
+	</tr>
+
+	</table>
+
+            <input type=submit value='Mulai RPO'>
+            </form>
+            ";
+
+	break;
+
+
+ 
+
+} // switch($_GET[act]){ =======================================================================================
 
 
 

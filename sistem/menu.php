@@ -15,7 +15,6 @@ GNU General Public License v2 (links provided above) for more details.
 
 include "../config/config.php";
 include "modul/function.php";
-
 if ($_SESSION[leveluser]=='admin'){
   $sql="select namaModul,link from modul order by urutan ";
 }
@@ -28,7 +27,6 @@ elseif ($_SESSION[leveluser]=='kasir'){
 else{
   $sql="select * from modul m, leveluser lu where m.idLevelUser = lu.idLevelUser and levelUser='semua' and publish='Y' order by urutan";
 } 
-
 //debug 
 //echo $_SESSION[leveluser]."-".$sql;
 $hasil = mysql_query($sql);

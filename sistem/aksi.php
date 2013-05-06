@@ -1036,6 +1036,160 @@ elseif ($module=='labelperbarcode' AND $act=='hapus'){
 } // end
 
 
+// simpan RPO
+elseif ($module=='buat_rpo' AND $act=='input') {
+
+	$tgl = date("Y-m-d H:i:s");
+
+	$NomorStruk = 0;
+	// cetak struk -------------
+
+	// ambil footer & header struk
+	$sql   	= "SELECT `option`,`value` FROM config"; 
+	$hasil 	= mysql_query($sql) or die(mysql_error());
+	while ($x = mysql_fetch_array($hasil)) {
+		if ($x[option]=='store_name') 		{ $store_name=$x[value];};
+		if ($x[option]=='receipt_header1') 	{ $header1=$x[value];};
+		if ($x[option]=='receipt_footer1') 	{ $footer1=$x[value];};
+		if ($x[option]=='receipt_footer2') 	{ $footer2=$x[value];};
+	};
+
+	// ambil alamat printer
+	$sql 	= "SELECT w.printer_commands, w.printer_type FROM kasir AS k, workstation AS w 
+		WHERE k.tglTutupKasir IS NULL AND k.idUser = $_SESSION[iduser] AND k.currentWorkstation = w.idWorkstation";
+	$hasil 	= mysql_query($sql) or die(mysql_error());
+	$x	= mysql_fetch_array($hasil);
+	$perintah_printer = $x['printer_commands'];
+	$jenis_printer = $x['printer_type'];
+
+	// ambil transaksi yang akan dicetak
+	$sql = "SELECT t.jumBarang,t.hargaJual,b.namaBarang FROM barang AS b, tmp_detail_jual AS t
+		WHERE t.username='$_SESSION[uname]' AND t.barcode=b.barcode";
+	$hasil 	= mysql_query($sql);
+	
+	// siapkan string yang akan dicetak
+	$struk  = str_pad($store_name, 40, " ", STR_PAD_BOTH) . "\n" . str_pad($header1, 40, " ", STR_PAD_BOTH) . "\n" . str_pad($_SESSION[uname] ." : ". date("d-m-Y H:i") ." #$NomorStruk", 40, " ", STR_PAD_BOTH) ." \n";
+
+	$struk .= "-------------------------------------\n";
+	while ($x = mysql_fetch_array($hasil)) {	
+		//$temp = $x[jumBarang] . "x ". $x[namaBarang]. " @".number_format($x[hargaJual],0,',','.').
+		//		": ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
+		$temp = $x[namaBarang]. "\n        @ ".number_format($x[hargaJual],0,',','.'). " x ". $x[jumBarang]. 
+				" = ".number_format(($x[hargaJual] * $x[jumBarang]),0,',','.')."\n";
+		// jika panjang baris > 40 huruf, pecah jadi 2 baris		
+		//if (strlen($temp) > 40) {
+		//	$tmp = substr($temp, 0, 40) . "- \n -" . substr($temp, 40);
+		//	$temp = $tmp;
+		//};
+		$struk .= $temp;
+	}
+	$struk .= "-------------------------------------\n";
+	$struk .= " TOTAL   : ".number_format($_POST['tot_pembelian'],0,',','.')." \n";
+	$struk .= "-------------------------------------\n";
+	$struk .= str_pad($footer1, 40, " ", STR_PAD_BOTH) . "\n" . str_pad($footer2, 40, " ", STR_PAD_BOTH) . "\n\n\n\n\n\n\n\n\n\n\n\n\n";
+
+	if ($jenis_printer == 'pdf') {
+		require('classes/fpdf.php');
+		$pdf=new FPDF();
+		$pdf->AddPage();
+		$pdf->SetFont('Arial','',9);
+		$struk_pdf = explode("\n", $struk);
+		foreach ($struk_pdf as $baris)
+		{
+			$width 	= 40;
+			$length	= 1;
+			$pdf->Cell($width,$length,$baris);
+			$pdf->Ln(3);
+		}
+		$pdf->Output();
+
+	} elseif ($jenis_printer == 'rlpr') {
+		include "classes/PrintSend.php";
+		include "classes/PrintSendLPR.php";
+		$perintah = "echo \"$struk\" |lpr $perintah_printer -l";
+		exec($perintah, $output);
+	}
+
+	
+
+	// generate file CSV nya
+	
+		// format isi file CSV untuk RPO :
+		// $data[0]  = barcode
+		// $data[1]  = idBarang 			- ignored
+		// $data[2]  = namaBarang
+		// $data[3]  = jumlah Barang / jumBarang
+		// $data[4]  = hargaBeli 			- ignored
+		// $data[5]  = hargaJual 			- ignored 
+		// $data[6]  = RRP (Recommended Retail Price) 	- ignored
+		// $data[7]  = namaSatuanBarang
+		// $data[8]  = namaKategoriBarang
+		// $data[9]  = Supplier 			
+		// $data[10] = username 			- ignored
+
+		// persiapan membuat output file CSV
+		$csv = "\"barcode\",\"idBarang\",\"namaBarang\",\"jumBarang\",\"hargaBeli\",\"hargaJual\",\"RRP\",\"SatuanBarang\",\"KategoriBarang\",\"Supplier\",\"kasir\"\n";
+
+		// cari nama gudang ini 
+		$hasil 	= mysql_query("SELECT value FROM config WHERE `option` = 'store_name'");
+		$x	= mysql_fetch_array($hasil);
+		$namaGudang = ""; $namaGudang = $x['value'];
+
+		$hasil1 = mysql_query("SELECT * FROM tmp_detail_jual WHERE idCustomer = '$_SESSION[idCustomer]' AND username = '$_SESSION[uname]'");
+		while ($x = mysql_fetch_array($hasil1)) {
+		
+			// cari namaBarang
+			$hasil2	= mysql_query("SELECT namaBarang, idKategoriBarang, idSatuanBarang FROM barang WHERE barcode='".$x['barcode']."'");
+			$y	= mysql_fetch_array($hasil2);
+			$namaBarang 		= $y['namaBarang'];
+			$idKategoriBarang	= $y['idKategoriBarang'];
+			$idSatuanBarang		= $y['idSatuanBarang'];
+
+			// cari namaSatuanBarang
+			$hasil2	= mysql_query("SELECT namaSatuanBarang FROM satuan_barang WHERE idSatuanBarang=".$idSatuanBarang);
+			$y	= mysql_fetch_array($hasil2);
+			$namaSatuanBarang 		= $y[namaSatuanBarang];
+
+			// cari namaKategoriBarang
+			$hasil2	= mysql_query("SELECT namaKategoriBarang FROM kategori_barang WHERE idKategoriBarang=".$idKategoriBarang);
+			$y	= mysql_fetch_array($hasil2);
+			$namaKategoriBarang 		= $y[namaKategoriBarang];
+
+			$csv .= "\"".$x['barcode']."\",\"".$x['idBarang']."\",\"".$namaBarang."\",\"".$x['jumBarang']."\",\"".$x['hargaBeli']."\",\"".$x['hargaJual']."\",\"".$x['hargaJual']."\",\"".$namaSatuanBarang."\",\"".$namaKategoriBarang."\",\"".$namaGudang."\",\"".$_SESSION['uname']."\"\n";
+
+		}; // while ($x = mysql_fetch_array($hasil)) {
+
+		// kirim output CSV ke browser untuk di download
+		// cari nama Customer
+		$hasil2	= mysql_query("SELECT namaSupplier FROM supplier WHERE idSupplier='".$_SESSION['idCustomer']."'");
+		$y	= mysql_fetch_array($hasil2);
+		$namaSupplier 	= $y['namaSupplier'];
+		$namaFile	= $namaSupplier."-".date("Y-m-d--H-i");
+
+		// hapus transaksi jual ini dari table tmp_detail_jual
+		mysql_query("DELETE FROM tmp_detail_jual WHERE idCustomer = '$_SESSION[idCustomer]' AND username = '$_SESSION[uname]'");
+		$_SESSION['tot_pembelian'] = 0;	
+		releaseCustomer();
+
+		header("Content-type: text/csv");
+		header("Content-Disposition: attachment; filename=\"$namaFile.csv\"");
+		header("Pragma: no-cache");
+		header("Expires: 0");
+		echo $csv;
+
+		// hapus transaksi jual ini dari table tmp_detail_jual
+		mysql_query("DELETE FROM tmp_detail_jual WHERE idCustomer = '$_SESSION[idCustomer]' AND username = '$_SESSION[uname]'");
+		$_SESSION['tot_pembelian'] = 0;	
+		
+		unset($_SESSION['idCustomer']);
+		unset($_SESSION['periode']);
+		unset($_SESSION['range']);
+		unset($_SESSION['persediaan']);
+		releaseCustomer();
+
+}
+
+
 else{ // =======================================================================================================================================
     echo "Tidak Ada Aksi untuk modul ini";
 }

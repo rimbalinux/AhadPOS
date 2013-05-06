@@ -32,6 +32,7 @@ function getKasAwal($idUser){
 
     return $kas;
 }
+
 function getUangKasir($idUser){
     $tgl = date("Y-m-d");
     $query = mysql_query("SELECT sum(nominal) AS uang FROM transaksijual WHERE tglTransaksiJual LIKE '$tgl%' and idUser = '$idUser'");
@@ -54,8 +55,8 @@ function findSupplier($idSupplier){
     #session_register("idSupplier");
     #session_register("namaSupplier");
 	if ($dataSupplier) {
-		$_SESSION['idSupplier'] = $dataSupplier['idSupplier'];
-    		$_SESSION['namaSupplier'] = $dataSupplier['namaSupplier'];
+		$_SESSION['idSupplier'] 	= $dataSupplier['idSupplier'];
+    		$_SESSION['namaSupplier'] 	= $dataSupplier['namaSupplier'];
 	};
 }
 
@@ -215,6 +216,94 @@ function tambahBarangJual($barcode,$jumBarang){
         echo "Barang tidak ada";
     }
 }
+
+
+
+// =========================================== RPO ===========================================
+function cekBarangTempRPO($idCustomer,$barcode){
+
+	$adaJual = 0;
+	$sql = "SELECT * from tmp_detail_jual where idCustomer = '$idCustomer' and barcode = '$barcode' and username = '$_SESSION[uname]'";
+	$cek = mysql_query($sql);
+	$adaJual = mysql_num_rows($cek);
+
+    return $adaJual;
+}
+
+function tambahBarangRPOAda($idCustomer,$barcode,$jumBarang){
+    $jumlah = 0;
+
+	// jumBarang bisa < 1, yaitu untuk mengurangi jumlah
+	$jumlah = $jumBarang;
+
+    $sql	= "SELECT jumBarang FROM tmp_detail_jual 
+			WHERE idCustomer = '$idCustomer' AND barcode = '$barcode' AND username='$_SESSION[uname]'";
+    $ambilJumBarang = mysql_query($sql);
+    $dataJum = mysql_fetch_array($ambilJumBarang);
+    
+    $jumlah = $jumlah + $dataJum['jumBarang'];
+    
+	$tgl = date("Y-m-d H:i:s");
+
+    $sql	= "UPDATE tmp_detail_jual SET jumBarang = '$jumlah', tglTransaksi = '$tgl'
+		 WHERE idCustomer = '$idCustomer' AND barcode = '$barcode' AND username='$_SESSION[uname]'";
+    mysql_query($sql);
+}
+
+function tambahBarangRPO($barcode,$jumBarang,$range,$periode,$persediaan){
+
+    $dataAda = cekBarang($barcode);
+    if ($dataAda != 0){
+
+        $tgl 		= date("Y-m-d H:i:s");
+	$tglrange	= date("Y-m-d H:i:s", (time() - ($range * 24 * 60 * 60)));
+        $jualBarang = mysql_query("SELECT * FROM barang WHERE barcode = '$barcode'") or die(mysql_error());
+        $x = mysql_fetch_array($jualBarang);
+
+	$StokSaatIni = $x['jumBarang'];
+
+	// cari harga modal nya
+	$sql = "SELECT * FROM detail_beli 
+			WHERE barcode = '$barcode'  
+			ORDER BY idTransaksiBeli DESC LIMIT 1";
+	$hasil = mysql_query($sql);
+
+	$detilBarang = mysql_fetch_array($hasil);
+	if (mysql_num_rows($hasil) > 0) {
+		$hargaBeli = $detilBarang['hargaBeli'];
+	} else {
+		$hargaBeli = 0;
+	}
+
+	// hitung $SaranOrder
+	// SaranOrder = (TotalPenjualan[$range] / $range) x $persediaan
+
+		$sql	= "SELECT SUM(jumBarang) AS total FROM detail_jual AS dj, 
+				(SELECT idTransaksiJual FROM transaksijual 
+				WHERE tglTransaksiJual BETWEEN '$tglrange' AND '$tgl') AS tj 
+			WHERE barcode='$barcode' AND dj.nomorStruk = tj.idTransaksiJual";
+		//echo $sql;
+		$hasil	= mysql_query($sql);
+		$z	= mysql_fetch_array($hasil);
+
+	$SaranOrder = round(($z['total'] / $range) * $persediaan);
+	//echo $z['total']." - ".$range." - ".$persediaan." - ".$SaranOrder;
+
+	// simpan transaksi di tmp_detail_jual
+	$sql = "INSERT into tmp_detail_jual(idCustomer, tglTransaksi,
+                            barcode,jumBarang,hargaBeli,hargaJual,username, idBarang)
+                        VALUES('$_SESSION[idCustomer]','$tgl','$barcode',
+                            '$SaranOrder','$StokSaatIni',$hargaBeli,'$_SESSION[uname]', $SaranOrder)";
+	//echo $sql;
+        mysql_query($sql) or die(mysql_error());
+
+    } else {
+        echo "Barang tidak ada";
+    }
+}
+
+
+// ========================================= END RPO =========================================
 
 function ubahJumlahBarangBeliTemp($idSupplier,$idBarang,$jumlah){
     mysql_query("UPDATE tmp_detail_beli SET jumBarang = '$jumlah'
