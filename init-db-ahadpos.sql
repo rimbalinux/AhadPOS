@@ -12,8 +12,8 @@ SET NAMES utf8;
 SET SQL_MODE='';
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO';
 
-CREATE DATABASE IF NOT EXISTS `ahadpos`;
-USE `ahadpos`;
+-- CREATE DATABASE IF NOT EXISTS `ahadpos`;
+-- USE `ahadpos`;
 
 /*Table structure for table `bank` */
 
@@ -42,12 +42,13 @@ CREATE TABLE IF NOT EXISTS `barang` (
   `barcode` varchar(25) DEFAULT NULL,
   `username` varchar(30) DEFAULT NULL,
   `idRak` bigint(5) DEFAULT NULL,
-  UNIQUE KEY `barcode` (`barcode`),
+  PRIMARY KEY `barcode` (`barcode`),
   KEY `idKategoriBarang` (`idKategoriBarang`),
   KEY `idSupplier` (`idSupplier`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 /*Data for the table `barang` */
+
 
 insert into `barang` (`idBarang`,`namaBarang`,`idKategoriBarang`,`idSatuanBarang`,`jumBarang`,`hargaJual`,`last_update`,`idSupplier`,`barcode`,`username`,`idRak`) values (1,'Mie Sedap Goreng Kari Spesial',4,3,160,1250,'2010-03-26',5,'80808080',NULL,NULL);
 insert into `barang` (`idBarang`,`namaBarang`,`idKategoriBarang`,`idSatuanBarang`,`jumBarang`,`hargaJual`,`last_update`,`idSupplier`,`barcode`,`username`,`idRak`) values (2,'Mie Sedap Rebus Kari Ayam',4,3,160,1094,'2010-03-26',5,'82828282',NULL,NULL);
@@ -732,6 +733,56 @@ CREATE TABLE IF NOT EXISTS `audit` (
   `jumBarang` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+
+
+CREATE TABLE IF NOT EXISTS `arsip_barang` (
+			`idBarang` bigint(20) NOT NULL DEFAULT '0',
+			`namaBarang` varchar(30) DEFAULT ' ',
+			`idKategoriBarang` int(5) DEFAULT '0',
+  			`idSatuanBarang` int(5) DEFAULT '0',
+			`jumBarang` int(10) DEFAULT '0',
+			`hargaJual` bigint(20) DEFAULT '0',
+			`last_update` date DEFAULT '2000-01-01',
+			`idSupplier` bigint(20) DEFAULT '0',
+			`barcode` varchar(25) DEFAULT NULL,
+			`username` varchar(30) DEFAULT NULL,
+			`idRak` bigint(5) DEFAULT NULL,
+			  UNIQUE KEY `barcode` (`barcode`),
+			  KEY `idKategoriBarang` (`idKategoriBarang`),
+			  KEY `namaBarang` (`namaBarang`),
+			  KEY `idSupplier` (`idSupplier`),
+			  KEY `idKategoriBarang_2` (`idKategoriBarang`),
+			  KEY `idSupplier_2` (`idSupplier`)
+			) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+--
+-- Table structure for table `tmp_cetak_label_perbarcode`
+--
+
+CREATE TABLE IF NOT EXISTS `tmp_cetak_label_perbarcode` (
+  `id` int(12) NOT NULL AUTO_INCREMENT,
+  `tmpBarcode` varchar(50) DEFAULT NULL,
+  `tmpNama` varchar(100) DEFAULT NULL,
+  `tmpKategori` varchar(50) DEFAULT NULL,
+  `tmpSatuan` varchar(50) DEFAULT NULL,
+  `tmpJumlah` varchar(100) DEFAULT NULL,
+  `tmpHargaJual` varchar(100) DEFAULT NULL,
+  `tmpIdBarang` int(12) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9 ;
+
+
+# ======== OPTIMIZATIONS ===============
+
+alter table modul add index(idLevelUser);
+
+alter table leveluser add index (idLevelUser);
+
+alter table leveluser add index (levelUser);
+
+alter table modul add index(publish);
+
 
 
 SET SQL_MODE=@OLD_SQL_MODE;

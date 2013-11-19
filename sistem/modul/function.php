@@ -303,6 +303,64 @@ function tambahBarangRPO($barcode,$jumBarang,$range,$periode,$persediaan){
 }
 
 
+function SimpanRPOawal($supplierid, $range, $persediaan, $buffer) {
+
+	// ambil daftar barang supplier ybs
+	$sql	= "SELECT b.barcode, b.namaBarang, b.jumBarang FROM barang AS b  
+						WHERE b.idSupplier = ".$supplierid;
+	$hasil1	= mysql_query($sql);	
+	
+	while ($x = mysql_fetch_array($hasil1)) {
+
+		// cari harga beli nya
+		$sql	= "SELECT db.hargaBeli  
+				FROM detail_beli AS db
+				WHERE db.barcode = '".$x['barcode']."'  
+				ORDER BY db.idTransaksiBeli DESC LIMIT 1
+					";
+		$hasil2	= mysql_query($sql);
+		if ($z = mysql_fetch_array($hasil2)) {
+			$hargaBeli = $z['hargaBeli']; 
+		} else {	
+			$hargaBeli = 0;
+		};
+		
+		// cari SO (Saran Order)
+		$tglakhir 		= date("Y-m-d H:i:s");
+		$tglawal		= date("Y-m-d H:i:s", (time() - ($range * 24 * 60 * 60)));
+		
+		$sql	= "SELECT SUM(jumBarang) AS total FROM detail_jual AS dj, 
+						(SELECT idTransaksiJual FROM transaksijual 
+							WHERE tglTransaksiJual BETWEEN '$tglawal' AND '$tglakhir') AS tj 
+					WHERE barcode='".$x['barcode']."' AND dj.nomorStruk = tj.idTransaksiJual";
+		//echo $sql;
+		$hasil3	= mysql_query($sql);
+		$y		= mysql_fetch_array($hasil3);
+		
+		$AvgDaily		= ($y['total'] / $range); 
+		$BufferStock	= 0 + (($SaranOrder * $buffer) / 100);
+			
+		// SaranOrder = ((Avg Daily x Periode Persediaan) + Buffer Stock) - JumlahStokSaatIni
+		$SaranOrder 	= round($AvgDaily * $persediaan);	
+		$BufferStock	= 0 + (($SaranOrder * $buffer) / 100);
+		$SaranOrder		= round($SaranOrder + $BufferStock);
+		$SaranOrder		= $SaranOrder - $x['jumBarang'];
+		if ($SaranOrder < 0) { $SaranOrder = 0;};
+		
+		// Dikali 100 untuk menyimpan 2 digit pecahan, 
+		// karena idBarang itu integer / tidak bisa menyimpan pecahan
+		$AvgDaily	= $AvgDaily * 100; 
+
+		// simpan RPO awal di tmp_detail_jual
+		$sql = "INSERT INTO tmp_detail_jual(idCustomer, tglTransaksi,
+                            barcode,jumBarang,hargaBeli,hargaJual,username, idBarang)
+                        VALUES('$_SESSION[idCustomer]','".date("Y-m-d H:i:s",$SaranOrder)."','".$x['barcode']."',
+                            $SaranOrder, $hargaBeli, ".$x['jumBarang'].", '$_SESSION[uname]', $AvgDaily)";
+		mysql_query($sql) or die(mysql_error()." :: SQL = ".$sql);
+	
+	}; // while ($x = mysql_fetch_array($hasil1))
+}
+
 // ========================================= END RPO =========================================
 
 function ubahJumlahBarangBeliTemp($idSupplier,$idBarang,$jumlah){

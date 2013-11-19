@@ -13,6 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License v2 (links provided above) for more details.
 ----------------------------------------------------------------*/
 
+
 check_user_access(basename($_SERVER['SCRIPT_NAME']));
 session_start();
 
@@ -158,6 +159,10 @@ switch($_GET[act]){ // ---------------------------------------------------------
 			</form>
                     </td>
                     <td>
+			<form method=POST action='?module=pembelian_barang&act=rposup1'>
+			<input type=submit value='(o) Buat RPO Per Supplier' accesskey='o'>
+			</form>
+                    </td>
 		</tr>
 
 		</table>";
@@ -1489,6 +1494,99 @@ switch($_GET[act]){ // ---------------------------------------------------------
 	</table>
 
             <input type=submit value='Mulai RPO'>
+            </form>
+            ";
+
+	break;
+
+
+    case "rposup1": // ===============================================================================================================
+        echo "<h2>Buat RPO (Rencana Purchase Order) Per SUPPLIER :: Step 1</h2>
+            <form method=POST action='?module=pembelian_barang&act=rposup2'>
+
+                Supplier : 
+                <select name=supplierid>";
+            $supplier = getSupplier();
+            while($dataSupplier = mysql_fetch_array($supplier)){
+                echo "<option value=$dataSupplier[idSupplier]>$dataSupplier[namaSupplier]::$dataSupplier[idSupplier]::$dataSupplier[alamatSupplier]</option>";
+            }
+        echo "  </select>
+
+
+            <input type=submit value='Pilih Supplier'>
+            </form>
+            ";
+
+	break;
+
+
+
+    case "rposup2": // ===============================================================================================================
+        echo "<h2>Buat RPO (Rencana Purchase Order) Per SUPPLIER :: Step 2</h2>
+            <form method=POST action='modul/js_cetak_rposup.php?&init=yes' onSubmit=\"popupform(this, 'RPO')\">
+
+		<input type=hidden name=supplierid value='".$_POST['supplierid']."'>";
+
+	// cari periode delivery supplier ybs
+	$sql 	= "SELECT `interval`, namaSupplier FROM supplier WHERE idSupplier=".$_POST['supplierid'];
+	$hasil	= mysql_query($sql);
+	$x	= mysql_fetch_array($hasil);
+
+?>
+
+	<script>
+		function RecalcTotal(totalsementara) {
+		var total = 0;
+		var periode 		= parseInt(document.getElementById("periode").value);
+		var tibagudang	 	= parseInt(document.getElementById("tibagudang").value);
+		var tibatoko	 	= parseInt(document.getElementById("tibatoko").value);
+
+		total	=	periode + tibagudang + tibatoko;
+
+		document.getElementById("persediaan").value = total;
+	}
+	</script>
+	
+<?php
+	
+	echo "
+	<table>
+
+	<tr><td>Range analisa penjualan </td>
+		<td> : <input type=text size=4 			name=range value='30'> hari</td>
+	</tr>
+
+	<tr><td>Buffer Stock </td>
+		<td> : <input type=text size=4 			name=buffer value='30'> %</td>
+	</tr>
+
+	<tr><td></td>
+		<td>Periode delivery Supplier </td>
+		<td> : <input type=text size=4 			name=periode 		id=periode		value='".$x['interval']."' readonly> hari</td>
+	</tr>
+
+	<tr><td></td>
+		<td>Pesanan tiba di Gudang</td>
+		<td> : <input type=text size=4 			name=tibagudang 	id=tibagudang	value='2' onBlur='RecalcTotal(1)'> hari</td>
+	</tr>
+
+	<tr><td></td>
+		<td>Pesanan tiba di Toko</td>
+		<td> : <input type=text size=4 			name=tibatoko 		id=tibatoko		value='3'  onBlur='RecalcTotal(1)'> hari</td>
+	</tr>
+
+
+
+	<tr><td>Jumlah pemesanan </td>
+		<td> : untuk persediaan </td>
+		<td> : <input type=text size=4 			name=persediaan 	id=persediaan	value='".($x['interval'] + 2 + 3)."'> hari</td>
+	</tr>
+
+	</table>
+
+            <input type=submit value='Mulai RPO'>
+            
+            <input type=hidden name=namasupplier value='".$x['namaSupplier']."'>
             </form>
             ";
 

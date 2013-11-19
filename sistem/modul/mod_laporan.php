@@ -733,9 +733,10 @@ switch($_GET[act]){ //----------------------------------------------------------
         	<tr>
 			<td>Sortir berdasarkan</td>
 			<td>: 	<select name='sortir'> 
-				<option value='sisastok' selected>	Jumlah Sisa Stok</option>
-				<option value='umurstok' >		Umur Stok</option>
-				<option value='nilaistok'>		Nilai Stok</option>
+				<option value='avgSales' selected>	Average Daily Sales</option>
+				<option value='jmlStokIni' >		Jumlah Sisa Stok</option>
+				<option value='umurStok' >		Umur Stok</option>
+				<option value='nilaiStok'>		Nilai Stok</option>
 				</select>
 			</td>
 		</tr>
@@ -766,23 +767,77 @@ switch($_GET[act]){ //----------------------------------------------------------
 		$idKategoriBarang = 'AND b.idKategoriBarang = '.$_POST['kategori'];	
 	};
 
-	$sortir = $_POST['sortir'];
-	$sql	= "SELECT lb.barcode, lb.namaBarang, SUM(lb.jumBarang) AS sisastok, SUM(lb.hargaBeli * lb.jumBarang) AS nilaistok, 
-			(TIMESTAMPDIFF(DAY, lb.tglTransaksiBeli, NOW())) AS umurstok, lb.tglTransaksiBeli 
-		FROM 	(SELECT dj.barcode AS barcode, b.namaBarang AS namaBarang, dj.jumBarang, dj.jumBarangAsli, dj.hargaBeli, 
-				b.idKategoriBarang, dj.tglTransaksiBeli    
-      			FROM barang AS b, 
-             			(SELECT b.barcode, b.hargaBeli, b.jumBarang, b.jumBarangAsli, t.tglTransaksiBeli FROM detail_beli AS b, 
-                    			(SELECT idTransaksiBeli, tglTransaksiBeli FROM transaksibeli 
-                    			WHERE tglTransaksiBeli BETWEEN '".$_POST['dari']."' AND '".$_POST['sampai']."') AS t
-             			WHERE isSold = 'N' AND t.idTransaksiBeli = b.idTransaksiBeli AND b.jumBarang > 0) AS dj  
-			WHERE dj.barcode = b.barcode  $idKategoriBarang ORDER BY dj.barcode) AS lb 
-		GROUP BY lb.barcode 
-		ORDER BY $sortir DESC
-		LIMIT ".$_POST['jumlah'].";
+	// buat temporary table untuk simpan hasil
+	$sql = "
+		CREATE TABLE IF NOT EXISTS `tmp_lap_aging` (
+		  `uid` bigint(20) NOT NULL AUTO_INCREMENT,
+		  `barcode` varchar(25) DEFAULT NULL,
+		  `namaBarang` varchar(30) DEFAULT ' ',
+		  `nilaiStok` bigint(20) DEFAULT '0',
+		  `umurStok` int(10) DEFAULT '0',
+		  `jmlStokIni` int(10) DEFAULT '0',
+		  `jmlStokSemua` int(10) DEFAULT '0',
+		  `avgSales` DECIMAL (6,6) DEFAULT '0',
+
+		  PRIMARY KEY `uid` (`uid`),
+		  KEY `avgSales` (`avgSales`)
+		) ENGINE=MEMORY DEFAULT CHARSET=latin1;
 		";
 	$hasil	= mysql_query($sql) or die("Error : ".mysql_error());
-	//echo $sql;
+
+	$sortir = $_POST['sortir'];
+
+	$sql 	= "SELECT lb.barcode, lb.namaBarang, SUM(lb.jumBarang) AS sisastok, 
+			SUM(lb.hargaBeli * lb.jumBarang) AS nilaistok, 
+			(TIMESTAMPDIFF(DAY, lb.tglTransaksiBeli, NOW())) AS umurstok, 
+			lb.tglTransaksiBeli, lb.TotalJumlah    
+
+		FROM (
+			SELECT dj.barcode AS barcode, b.namaBarang AS namaBarang, dj.jumBarang, 
+				dj.jumBarangAsli, dj.hargaBeli, b.idKategoriBarang, dj.tglTransaksiBeli, 
+				b.jumBarang AS TotalJumlah   
+			FROM barang AS b, (
+				SELECT b.barcode, b.hargaBeli, b.jumBarang, b.jumBarangAsli, t.tglTransaksiBeli 
+				FROM detail_beli AS b, (
+					SELECT idTransaksiBeli, tglTransaksiBeli 
+					FROM transaksibeli 
+					WHERE tglTransaksiBeli BETWEEN '".$_POST['dari']."' AND '".$_POST['sampai']."'
+					) AS t 
+				WHERE isSold = 'N' AND t.idTransaksiBeli = b.idTransaksiBeli AND b.jumBarang > 0
+				) AS dj 
+			WHERE dj.barcode = b.barcode   $idKategoriBarang   ORDER BY dj.barcode
+			) AS lb 
+
+		GROUP BY lb.barcode 
+		LIMIT ".$_POST['jumlah']."; 
+		";
+
+	$hasil	= mysql_query($sql) or die("Error : ".mysql_error());
+
+	// masukkan ke temporary table
+	$sqltmp = "INSERT INTO tmp_lap_aging (barcode,namaBarang,nilaiStok,umurStok,jmlStokIni,jmlStokSemua,avgSales) VALUES ";
+	while ($x = mysql_fetch_array($hasil)) {
+		// hitung Average Sales / Day
+		$sql	= "
+			SELECT SUM(jumBarang) AS total 
+			FROM detail_jual AS dj, 
+					(
+					SELECT idTransaksiJual 
+					FROM transaksijual 
+					WHERE tglTransaksiJual BETWEEN '".$_POST['dari']."' AND '".$_POST['sampai']."') AS tj 
+			WHERE barcode='".$x['barcode']."' AND dj.nomorStruk = tj.idTransaksiJual";
+		$hasil3	= mysql_query($sql);
+		$y	= mysql_fetch_array($hasil3);
+		$avgSales	= ($y['total'] / $jmlhari); 
+
+		// buat statement SQL 
+		$sqltmp .= "('".$x['barcode']."','".$x['namaBarang']."','".$x['nilaistok']."','".$x['umurstok']."',
+			'".$x['sisastok']."','".$x['TotalJumlah']."','$avgSales'),";
+	};	
+	// hapus koma di akhir string
+	$sqltmp = substr($sqltmp, 0, -1);
+	// simpan ke temporary table
+	$hasil	= mysql_query($sqltmp) or die("Error : ".mysql_error());
 
 	echo "
 		<br/>
@@ -794,14 +849,29 @@ switch($_GET[act]){ //----------------------------------------------------------
 			<td class=td><b><center>No.</center></b></td>
 			<td class=td><b><center>Barcode</center></b></td>
 			<td class=td><b><center>Nama Barang</center></b></td>
-			<td class=td><b><center>Sisa Stok</center></b></td>
 			<td class=td><b><center>Nilai Stok</center></b></td>
 			<td class=td><b><center>Umur Stok</center></b></td>
+			<td class=td><b><center>Sisa Stok<br />(periode ini)</center></b></td>
+			<td class=td><b><center>Sisa Stok<br />(semua / saat ini)</center></b></td>
+			<td class=td><b><center>Avg<br />Daily<br />Sales</center></b></td>
 		</tr>
 		";
 
-	$no=0;
+	// ambil data dari temporary table
+	if ($sortir=='avgSales') { $sortir = 'avgSales,nilaiStok';};
+	$sql = "SELECT * FROM tmp_lap_aging ORDER BY $sortir DESC";
+	$hasil	= mysql_query($sql) or die("Error : ".mysql_error());
+
+
+	$start 	= strtotime($_POST['dari']);
+	$end 	= strtotime(time());
+	$jmlhari= abs($end - $start) / 86400;
+
+	$no	= 0;
+	$nilai	= 0;
 	while ($x=mysql_fetch_array($hasil)){
+
+		
 		//untuk mewarnai tabel menjadi selang-seling
 		$no++;
 		if(($no % 2) == 0){
@@ -815,12 +885,18 @@ switch($_GET[act]){ //----------------------------------------------------------
 			<td class=td align=center> $no </td>
 			<td class=td> ".$x['barcode']." </td>
 			<td class=td> ".$x['namaBarang']." </td>
-			<td class=td align=right> ".number_format($x['sisastok'],0,',','.')." </td>
-			<td class=td align=right> ".number_format($x['nilaistok'],0,',','.')." </td>
-			<td class=td align=right> ".number_format($x['umurstok'],0,',','.')." </td>
+			<td class=td align=right> ".number_format($x['nilaiStok'],0,',','.')." </td>
+			<td class=td align=right> ".number_format($x['umurStok'],0,',','.')." </td>
+			<td class=td align=right> <center>".number_format($x['jmlStokIni'],0,',','.')." </td>
+			<td class=td align=right> <center>".number_format($x['jmlStokSemua'],0,',','.')." </td>
+			<td class=td align=right> ".number_format($x['avgSales'],6,',','.')." </td>
 			</tr>";
+		$nilai = $nilai + ($x['nilaiStok'] / $x['jmlStokIni'] * $x['jmlStokSemua']);
 	};
-	echo "</table>";
+	echo "</table> Nilai Stok : Rp ".number_format($nilai,0,',','.');
+
+	// bersihkan temporary table
+	$hasil = mysql_query("DELETE FROM tmp_lap_aging");
 
 	exit;
 	}

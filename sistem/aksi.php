@@ -590,6 +590,10 @@ elseif ($module=='penjualan_barang' AND $act=='input'){
 		include "classes/PrintSend.php";
 		include "classes/PrintSendLPR.php";
 		$perintah = "echo \"$struk\" |lpr $perintah_printer -l";
+
+		// cara test lpr :
+		// export ip=192.168.0.17; echo "Ini AhadPOS \n apakah sukses cetak struk ?" |lpr -H $ip -P printer$ip -l
+
 		//echo $perintah; exit;
 		exec($perintah, $output);
 	};

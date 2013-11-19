@@ -112,17 +112,29 @@ switch($_GET['act']){
           <input type=submit accesskey='i' value='(i) Input Cepat Rak' ></form>
 	</div>
 
+			<br /><br />
+	
 	<div style=\"float:left\">
           <form method=POST action='../tools/fast-stock-opname/fast-SO.php'>
-          || <input type=submit value='Input Fast SO' ></form>
+          <input type=submit value='Input Fast SO' ></form>
+	</div>
+
+	<div style=\"float:left\">
+          <form method=POST action='../tools/fast-stock-opname/fast-SO-mobile.php'>
+          <input type=submit value='Input Mobile SO' ></form>
 	</div>
 
 	<div style=\"float:left\">
           <form method=POST action='?module=barang&act=ApproveFastSO1'>
-          <input type=submit value='Approve Fast SO' ></form>
+          || <input type=submit value='Approve Fast SO' ></form>
 	</div>
 
-	<br /><br />
+	<div style=\"float:left\">
+          <form method=POST action='?module=barang&act=ApproveMobileSO1'>
+          || <input type=submit value='Approve Mobile SO' ></form>
+	</div>
+
+			<br /><br />
 	
 	<div style=\"float:left\">
           <form method=POST action='?module=barang&act=returbarang1' onSubmit=\"popupform(this, 'inputrak')\" >
@@ -495,7 +507,7 @@ switch($_GET['act']){
 				$baris = 1;
 				echo '<p style="page-break-after: always" />';
 			};
-
+	
 			$namaBarang = $r[namaBarang];
 			// jika terlalu panjang nama barangnya 
 			if (strlen($namaBarang) > 15) {
@@ -1333,6 +1345,136 @@ switch($_GET['act']){
 			$sql = "UPDATE fast_stock_opname SET approved=1 WHERE barcode='".$_POST["barcode$i"]."'";
 			$hasil1 = mysql_query($sql);
 			echo "Approved : ".$_POST["barcode$i"].", stok tercatat: $x[jumBarang], selisih: ".$_POST["selisih$i"].", total: $jumBarang <br />";
+			//var_dump($_POST);	
+		};
+	}; // for ($i = 0; $i <= $_POST[ctr]; $i++) {
+
+	break;
+
+
+
+  case "ApproveMobileSO1":  // ----------------------------------------------------------------------------
+
+
+	// cari SO yang belum di approve 
+	$sql 	= "SELECT * FROM fast_stock_opname WHERE approved=0 LIMIT 100";
+	$hasil1	= mysql_query($sql);	
+
+ 	echo "
+		<h2>Approve Mobile Stock Opname</h2>
+		<form method=POST action='?module=barang&act=ApproveMobileSO2'>
+
+	<br /><br />
+
+	<table border=1>
+	<tr>	
+		<td><center>
+			Rak
+		</center></td>
+		<td>Barcode
+		</td>
+		<td>Nama Barang
+		</td>
+		<td><center>
+			Jumlah<br />Tercatat
+		</center></td>
+		<td><center>
+			Ditemukan
+		</center></td>
+		<td><center>
+			Approve
+		</center></td>
+		<td><center>#</center>
+		</td>
+		<td><center>
+			Hapus<br />Barang
+		</center></td>
+	</tr>
+	";
+
+	$x = mysql_fetch_array($hasil1);
+	$ctr 		= 1;
+	$jumlahRecord	= mysql_num_rows($hasil1);
+
+	do {
+
+		if (strlen($x[namaBarang]) > 0) {
+			
+		$sql	=	"SELECT jumBarang FROM barang WHERE barcode='".$x[barcode]."'";
+		$hasil2	= mysql_query($sql);
+		$z		= mysql_fetch_array($hasil2);	
+		echo "
+			<tr>
+			<td><center>
+				$x[idRak]
+			</center></td>
+			<td>$x[barcode] 	<input type=hidden name=barcode$ctr value=$x[barcode]>
+			</td>
+			<td>$x[namaBarang]
+			</td>
+			<td><center>
+				$z[jumBarang]
+			</center></td>
+			<td><center>
+				$x[selisih]	<input type=hidden name=selisih$ctr value=$x[selisih]>
+			</center></td>
+			<td><center>
+				<input type=checkbox name=appr$ctr checked=yes>
+			</center></td>
+			<td><center>#</center>
+			</td>
+			<td><center>
+				<input type=checkbox name=hapus$ctr>
+			</center></td>
+			</tr>
+		";
+		}; // if (strlen($x[namaBarang]) > 0) {
+
+		$ctr++;
+
+	} while ($x = mysql_fetch_array($hasil1));
+
+	echo "</table>	
+
+		<input type=submit accesskey='s' value='(s) Submit'>	
+		<input type=hidden name=ctr value=$ctr>
+
+		</form>";
+
+	break;
+
+
+  case "ApproveMobileSO2":  // ----------------------------------------------------------------------------
+
+
+ 	echo "
+		<h2>Proses Mobile Stock Opname</h2>
+	<br /><br />
+	";
+
+	for ($i = 1; $i <= $_POST[ctr]; $i++) {
+
+		// cek barang dihapus
+		if ($_POST["hapus$i"] == 'on') {
+			// ....still having thoughts about it, for now just ignore.
+
+		// cek barang yang di approve SO nya
+		} elseif ($_POST["appr$i"] == 'on') {
+			// cari barang.jumBarang ybs
+			$sql 	= "SELECT jumBarang FROM barang WHERE barcode='".$_POST["barcode$i"]."'";
+			$hasil1 = mysql_query($sql);
+			$x	= mysql_fetch_array($hasil1);
+
+			$jumBarang 	= $_POST["selisih$i"];
+			
+			// update barang.jumBarang untuk barcode ybs
+			$sql = "UPDATE barang SET jumBarang=$jumBarang WHERE barcode='".$_POST["barcode$i"]."'";
+			$hasil1 = mysql_query($sql);
+
+			// ganti fast_stock_opname.approved menjadi 1 / true
+			$sql = "UPDATE fast_stock_opname SET approved=1 WHERE barcode='".$_POST["barcode$i"]."'";
+			$hasil1 = mysql_query($sql);
+			echo "Approved : ".$_POST["barcode$i"].", stok tercatat: $x[jumBarang], ditemukan = <b>".$_POST["selisih$i"]."</b><br />";
 			//var_dump($_POST);	
 		};
 	}; // for ($i = 0; $i <= $_POST[ctr]; $i++) {

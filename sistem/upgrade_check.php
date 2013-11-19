@@ -19,15 +19,16 @@ as required by the current version of AhadPOS
 
 NO DESTRUCTIVE QUERY ALLOWED HERE
 ----------------------------------------------------------------*/
+// exit;
 
 include "../config/config.php";
 
 
-// Software Version : 1.5.0
+// Software Version
 // probably a good idea to move these next 3 lines into config.php instead
 $major 		= 1;
 $minor		= 6;
-$revision	= 0;
+$revision	= 1;
 
 // serialize this
 $current_version	= array($major, $minor, $revision);
@@ -63,21 +64,21 @@ if ($major == $dbmajor && $minor == $dbminor && $revision == $dbrevision) {
 
 
 // ---------------------- start upgrading if database version < software version
-
+ssh 
 echo "Current database version : $dbmajor.$dbminor.$dbrevision <br />";
 echo "Current software version : $major.$minor.$revision <br /><br />";
 
-if ($major >= 1 && $dbmajor <= $major) { 	// ------- upgrade semua patch versi 1.x
+if ($major >= 1 && $dbmajor <= $major) { 	// ------- eksekusi semua patch versi 1.x
 	echo "Checking database version 1.x.x \n <br />";
         check_minor_major1($dbminor, $minor, $dbrevision, $revision);
 } else { selesai(); };
 
-if ($major >= 2 && $dbmajor <= $major) { 	// ------- upgrade semua patch versi 2.x
+if ($major >= 2 && $dbmajor <= $major) { 	// ------- eksekusi semua patch versi 2.x
         echo "Checking database version 2.x.x \n <br />";
         check_minor_major2($dbminor, $minor, $dbrevision, $revision);
 } else { selesai(); }
 
-if ($major >= 3 && $dbmajor <= $major) { 	// ------- upgrade semua patch versi 3.x
+if ($major >= 3 && $dbmajor <= $major) { 	// ------- eksekusi semua patch versi 3.x
         echo "Checking database version 3.x.x \n <br />";
 	check_minor_major3($dbminor, $minor, $dbrevision, $revision);
 } else { selesai(); }
@@ -91,21 +92,22 @@ exit;
 // =================================== PATCH VERSI 1.x.x ==========================================
 function check_minor_major1($dbminor, $minor, $dbrevision, $revision) {
 
-	if ($minor >= 2 && $dbminor < $minor) {	// ------- upgrade semua patch versi 1.2.x 
+	if ($minor <= 2 && $dbminor <= $minor) {	// ------- eksekusi semua patch versi 1.2.x 
 	        echo "Upgrading database to version 1.2.x \n <br />";
 		check_revision_minor2_major1($dbminor, $minor, $dbrevision, $revision);
 	}
 
-	if ($minor >= 5 && $dbminor < $minor) { 	// ------- upgrade semua patch versi 1.5.x
+	if ($minor <= 5 && $dbminor <= $minor) { 	// ------- eksekusi semua patch versi 1.5.x
                 echo "Upgrading database to version 1.5.x \n <br />";
 		check_revision_minor5_major1($dbminor, $minor, $dbrevision, $revision);
 	}
 
-	if ($minor >= 6 && $dbminor < $minor) { 	// ------- upgrade semua patch versi 1.6.x
-                echo "Upgrading database to version 1.6.x \n <br />";
-		check_revision_minor6_major1($dbminor, $minor, $dbrevision, $revision);
+	if ($minor <= 6 && $dbminor <= $minor) { 	// ------- eksekusi semua patch versi 1.6.x
+		if ($dbrevision < $revision) {
+	                echo "Upgrading database to version 1.6.x \n <br />";
+			check_revision_minor6_major1($dbminor, $minor, $dbrevision, $revision);
+		}
 	}
-
 }
 
 
@@ -127,8 +129,17 @@ function check_revision_minor5_major1($dbminor, $minor, $dbrevision, $revision) 
 
 function check_revision_minor6_major1($dbminor, $minor, $dbrevision, $revision) {
 
-        echo "Upgrading database from 1.5.0 to version 1.6.0 \n <br />";
-	upgrade_150_to_160();
+	// upgrade 1.5.x ke 1.6.0
+        if ($dbminor == '5') {
+		echo "Upgrading database from 1.5.0 to version 1.6.0 \n <br />";
+		upgrade_150_to_160();
+	};
+
+	// upgrade 1.6.0 ke 1.6.x
+	if (($dbminor == $minor) && ($dbrevision < $revision)) {
+		echo "Upgrading database from 1.6.0 to version 1.6.x \n <br />";
+		upgrade_160_to_161();
+	};
 }
 
 
@@ -177,9 +188,9 @@ function upgrade_120_to_125() {
 	$hasil	= mysql_query($sql);
 
 	if (mysql_num_rows($hasil) > 0) {
-	        $sql = "UPDATE config SET value = '".serialize(array(1,2,5))."' WHERE `option` = 'version'";
+	        $sql = "UPDATE `config` SET value = '".serialize(array(1,2,5))."' WHERE `option` = 'version'";
 	} else {
-		$sql  = "INSERT INTO config (`option`, value, description) VALUES ('version', '".serialize(array(1,2,5))."', '')";
+		$sql  = "INSERT INTO `config` (`option`, value, description) VALUES ('version', '".serialize(array(1,2,5))."', '')";
 	};
         $hasil  = mysql_query($sql);
 
@@ -223,9 +234,9 @@ function upgrade_125_to_150() {
         $hasil  = mysql_query($sql);
 
         if (mysql_num_rows($hasil) > 0) {
-                $sql = "UPDATE config SET value = '".serialize(array(1,5,0))."' WHERE `option` = 'version'";
+                $sql = "UPDATE `config` SET value = '".serialize(array(1,5,0))."' WHERE `option` = 'version'";
         } else {
-                $sql  = "INSERT INTO config (`option`, value, description) VALUES ('version', '".serialize(array(1,5,0))."', '')";
+                $sql  = "INSERT INTO `config` (`option`, value, description) VALUES ('version', '".serialize(array(1,5,0))."', '')";
         };
         $hasil  = mysql_query($sql);
 
@@ -233,6 +244,43 @@ function upgrade_125_to_150() {
 
 
 function upgrade_150_to_160() {
+
+	$sql	= "alter table modul add index(idLevelUser);";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+	$sql	= "alter table modul add index(publish);";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+	$sql	= "alter table leveluser add index (idLevelUser);";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+	$sql	= "alter table leveluser add index (levelUser);";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+	$sql	= "ALTER TABLE `supplier` ADD `interval` INT NOT NULL DEFAULT '7'";
+        $hasil  = exec_query($sql);
+	echo mysql_error();
+
+
+        // update version number ------------------------------------------------------
+        $sql    = "SELECT * FROM config WHERE `option` = 'version'";
+        $hasil  = mysql_query($sql);
+
+        if (mysql_num_rows($hasil) > 0) {
+                $sql = "UPDATE `config` SET value = '".serialize(array(1,6,0))."' WHERE `option` = 'version'";
+        } else {
+                $sql  = "INSERT INTO `config` (`option`, value, description) VALUES ('version', '".serialize(array(1,6,0))."', '')";
+        };
+        $hasil  = mysql_query($sql);
+
+}
+
+
+function upgrade_160_to_161() {
 
 	$sql 	= "CREATE TABLE IF NOT EXISTS `arsip_barang` (
 			`idBarang` bigint(20) NOT NULL DEFAULT '0',
@@ -271,39 +319,19 @@ function upgrade_150_to_160() {
         $hasil  = exec_query($sql);
 	echo mysql_error();
 
-	$sql	= "alter table modul add index(idLevelUser);";
-        $hasil  = exec_query($sql);
-	echo mysql_error();
-
-	$sql	= "alter table modul add index(publish);";
-        $hasil  = exec_query($sql);
-	echo mysql_error();
-
-	$sql	= "alter table leveluser add index (idLevelUser);";
-        $hasil  = exec_query($sql);
-	echo mysql_error();
-
-	$sql	= "alter table leveluser add index (levelUser);";
-        $hasil  = exec_query($sql);
-	echo mysql_error();
-
-	$sql	= "ALTER TABLE `supplier` ADD `interval` INT NOT NULL DEFAULT '7'";
-        $hasil  = exec_query($sql);
-	echo mysql_error();
-
-
         // update version number ------------------------------------------------------
         $sql    = "SELECT * FROM config WHERE `option` = 'version'";
         $hasil  = mysql_query($sql);
 
         if (mysql_num_rows($hasil) > 0) {
-                $sql = "UPDATE config SET value = '".serialize(array(1,6,0))."' WHERE `option` = 'version'";
+                $sql = "UPDATE `config` SET value = '".serialize(array(1,6,1))."' WHERE `option` = 'version'";
         } else {
-                $sql  = "INSERT INTO config (`option`, value, description) VALUES ('version', '".serialize(array(1,6,0))."', '')";
+                $sql  = "INSERT INTO `config` (`option`, value, description) VALUES ('version', '".serialize(array(1,6,1))."', '')";
         };
         $hasil  = mysql_query($sql);
 
 }
+
 
 
 // =================================== PATCH VERSI 2.x.x ==========================================
