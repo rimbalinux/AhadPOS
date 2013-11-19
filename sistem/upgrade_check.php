@@ -64,7 +64,7 @@ if ($major == $dbmajor && $minor == $dbminor && $revision == $dbrevision) {
 
 
 // ---------------------- start upgrading if database version < software version
-ssh 
+ 
 echo "Current database version : $dbmajor.$dbminor.$dbrevision <br />";
 echo "Current software version : $major.$minor.$revision <br /><br />";
 
@@ -136,10 +136,10 @@ function check_revision_minor6_major1($dbminor, $minor, $dbrevision, $revision) 
 	};
 
 	// upgrade 1.6.0 ke 1.6.x
-	if (($dbminor == $minor) && ($dbrevision < $revision)) {
+	//if (($dbminor == $minor) && ($dbrevision < $revision)) {
 		echo "Upgrading database from 1.6.0 to version 1.6.x \n <br />";
 		upgrade_160_to_161();
-	};
+	//};
 }
 
 
